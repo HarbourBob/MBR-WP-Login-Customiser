@@ -3,16 +3,16 @@ Contributors: madebyrob
 Tags: login, security, customization, branding, custom-login
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 1.02
+Stable tag: 1.1.0
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Secure and customise your WordPress login page with custom URLs, stunning visual styles, and complete branding control.
+Secure and customize your WordPress login page with custom URLs, stunning visual styles, and complete branding control.
 
 == Description ==
 
-MBR Login Customiser is a comprehensive security and customisation plugin that allows you to completely transform your WordPress login experience. Hide your login page from automated attacks by using a custom URL, then brand it beautifully with modern design options, including Dark Mode and Glassmorphism effects.
+MBR Login Customiser is a comprehensive security and customization plugin that allows you to completely transform your WordPress login experience. Hide your login page from automated attacks by using a custom URL, then brand it beautifully with modern design options including Dark Mode and Glassmorphism effects.
 
 = Security Features =
 
@@ -24,12 +24,12 @@ MBR Login Customiser is a comprehensive security and customisation plugin that a
 = Visual Customization =
 
 * **Custom Logo** - Upload your own logo via the WordPress Media Library
-* **Background Options** - Choose from solid colours, gradients, or full background images
+* **Background Options** - Choose from solid colors, gradients, or full background images
 * **Form Styles** - Default, Dark Mode, or Glassmorphism (frosted glass effect)
 * **Custom Fonts** - 10+ Google Fonts or system font stacks
 * **Animations** - Fade, Slide, Zoom, or Bounce entrance effects
-* **Box Shadows** - Five shadow depths, including a colored glow effect
-* **Button Colours** - Full colour picker for the login button
+* **Box Shadows** - Five shadow depths including a colored glow effect
+* **Button Colors** - Full color picker for the login button
 * **Welcome Message** - Add custom text above the login form
 * **Footer Text** - Custom footer content with HTML support
 * **Advanced CSS** - Add your own CSS for complete control
@@ -43,7 +43,7 @@ MBR Login Customiser is a comprehensive security and customisation plugin that a
 
 = Modern Effects =
 
-**Dark Mode** - Perfect for colourful backgrounds, with light text on dark semi-transparent forms.
+**Dark Mode** - Perfect for colorful backgrounds, with light text on dark semi-transparent forms.
 
 **Glassmorphism** - Stunning frosted glass effect with backdrop blur, ideal for gradient or image backgrounds.
 
@@ -53,7 +53,7 @@ MBR Login Customiser is a comprehensive security and customisation plugin that a
 2. Activate the plugin through the 'Plugins' screen in WordPress
 3. Go to Settings > Custom Login to configure the plugin
 4. Set your custom login URL and save your emergency access key
-5. Customise the appearance to match your brand
+5. Customize the appearance to match your brand
 
 == Frequently Asked Questions ==
 
@@ -95,27 +95,34 @@ Yes! Use the Custom CSS field to load and apply any web font you like, or choose
 
 = Does this replace other security plugins? =
 
-No. This plugin focuses on login URL customisation and appearance. Use it alongside proper security measures like strong passwords, two-factor authentication, and security plugins.
+No. This plugin focuses on login URL customization and appearance. Use it alongside proper security measures like strong passwords, two-factor authentication, and security plugins.
 
 == Screenshots ==
 
 1. Login URL settings with custom slug and emergency access key
-2. Appearance settings with background options, form styles, and colours
+2. Appearance settings with background options, form styles, and colors
 3. Dark Mode login page with custom background
 4. Glassmorphism effect with gradient background
-5. Font, animation, and shadow customisation options
+5. Font, animation, and shadow customization options
 6. Custom logo and welcome message example
 
 == Changelog ==
 
+= 1.1.0 =
+* Added: Limit Login Attempts - lock out an IP after a configurable number of failed logins
+* Added: Security tab with max attempts, attempt window and lockout duration controls
+* Added: IP whitelist so trusted addresses are never locked out
+* Added: Proxy/CDN toggle for correct visitor IP detection behind Cloudflare etc.
+* Added: Currently Locked Out panel with one-click unlock and Clear All
+
 = 1.02 =
 * Added: Custom font selection (Google Fonts + System Fonts)
 * Added: Form entrance animations (Fade, Slide, Zoom, Bounce)
-* Added: Box shadow options, including colored glow effect
+* Added: Box shadow options including colored glow effect
 * Added: Custom footer text with HTML support
 * Improved: Dark Mode styling with better specificity
 * Improved: Glassmorphism effect with enhanced blur
-* Fixed: Button colour not applying correctly
+* Fixed: Button color not applying correctly
 * Fixed: Form visibility issues in Dark Mode
 
 = 1.01 =
@@ -123,7 +130,7 @@ No. This plugin focuses on login URL customisation and appearance. Use it alongs
 * Added: Glassmorphism form style
 * Added: Gradient background support with direction control
 * Added: Background image upload via Media Library
-* Added: Colour pickers for all colour options
+* Added: Color pickers for all color options
 * Added: Logo upload via Media Library
 * Improved: Admin interface with tabbed settings
 * Improved: CSS specificity for better override control
@@ -132,10 +139,10 @@ No. This plugin focuses on login URL customisation and appearance. Use it alongs
 * Initial release
 * Custom login URL functionality
 * Emergency access system
-* Basic login page customisation
+* Basic login page customization
 * Logo customization
 * Background color selection
-* Button color customisation
+* Button color customization
 * Welcome message
 * Custom CSS support
 
@@ -163,4 +170,4 @@ This plugin does not collect, store, or transmit any user data. All settings are
 
 == Credits ==
 
-Developed by Robert Palmer from Little Web Shack with a focus on security, usability, and modern design aesthetics.
+Developed by Bob from Little Web Shack with a focus on security, usability, and modern design aesthetics.

@@ -1,149 +1,211 @@
-<div align="center">
+# MBR Custom Login - WordPress Plugin
 
-# 🔐 MBR Login Customiser
+A security-focused WordPress plugin that allows you to customize your login URL and appearance, protecting your site from automated attacks on standard login pages.
 
-### Hide your WordPress login page. Then make it absolutely gorgeous.
+## Features
 
-A completely free WordPress plugin that locks down your login page against bots **and** lets you brand it beautifully — no premium tier, no upsells, no tracking. Ever.
+### Security Features
+- **Custom Login URL**: Replace `/wp-admin` and `/wp-login.php` with your own custom slug
+- **Block Standard Login**: Automatically blocks access to default WordPress login URLs
+- **Emergency Access**: Secure backup URL in case you forget your custom login slug
+- **404 Responses**: Returns proper 404 errors for blocked login attempts
 
-[![Version](https://img.shields.io/badge/version-1.0.2-blue.svg)](https://littlewebshack.com/mbr-login-customiser/)
-[![License](https://img.shields.io/badge/license-GPLv2-green.svg)](LICENSE)
-[![WordPress](https://img.shields.io/badge/WordPress-5.0%2B-21759b.svg)](https://wordpress.org/)
-[![Price](https://img.shields.io/badge/price-100%25%20free-brightgreen.svg)](https://littlewebshack.com/mbr-login-customiser/)
-[![No Upsells](https://img.shields.io/badge/upsells-none-success.svg)](https://littlewebshack.com/mbr-login-customiser/)
+### Appearance Customization
+- **Custom Logo**: Upload your own logo for the login page
+- **Logo Link**: Set where the logo links to (defaults to homepage)
+- **Welcome Message**: Display a custom message above the login form
+- **Color Customization**: Change background and button colors
+- **Custom CSS**: Add your own CSS for advanced customization
 
-[**⬇️ Download**](https://littlewebshack.com/?mbr_dl=dee046a646261aa5) · [**🌐 Plugin Page**](https://littlewebshack.com/mbr-login-customiser/) · [**💬 Request a Feature**](https://littlewebshack.com/contact/)
+## Installation
 
-</div>
+1. Upload the `mbr-custom-login.php` file to your `/wp-content/plugins/` directory
+2. Activate the plugin through the 'Plugins' menu in WordPress
+3. Go to **Settings > Custom Login** to configure the plugin
+
+## Configuration
+
+### Login URL Settings
+
+Navigate to **Settings > Custom Login > Login URL** tab:
+
+1. **Custom Login Slug**: Enter your desired login URL slug (e.g., "secure-entry")
+   - Your new login URL will be: `yoursite.com/your-slug`
+   - Avoid using reserved words like: wp-admin, admin, login, wp-login
+
+2. **Emergency Access Key**: A randomly generated key for backup access
+   - Save this key somewhere safe!
+   - Emergency URL format: `yoursite.com?mbr_emergency=YOUR_KEY`
+   - Use the "Generate New Key" button to create a new one if needed
+
+### Appearance Settings
+
+Navigate to **Settings > Custom Login > Appearance** tab:
+
+1. **Custom Logo URL**: Full URL to your logo image
+   - Recommended size: 320x80 pixels
+   - Supports: JPG, PNG, SVG
+
+2. **Logo Link URL**: Where the logo should link (default: homepage)
+
+3. **Logo Title Text**: Hover text for the logo
+
+4. **Welcome Message**: Optional message displayed above login form
+   - Supports basic HTML formatting
+
+5. **Background Color**: Page background color (hex color picker)
+
+6. **Button Color**: Login button color (hex color picker)
+
+7. **Custom CSS**: Advanced CSS customization
+   - Target `.login` class elements
+   - No `<style>` tags needed - just pure CSS
+
+## Security Considerations
+
+### Best Practices
+1. **Choose a unique slug**: Don't use obvious names like "login2" or "admin-panel"
+2. **Keep your emergency key safe**: Store it in a password manager
+3. **Test before deployment**: Make sure you can access the new URL before leaving the settings page
+4. **Use HTTPS**: This plugin works best on SSL-enabled sites
+
+### What This Plugin Does NOT Do
+- Does NOT protect against determined attackers who already know your login URL
+- Does NOT replace proper security measures (strong passwords, 2FA, etc.)
+- Does NOT block access to REST API endpoints or XML-RPC
+
+### Compatibility
+- **WordPress Version**: 5.0 or higher
+- **PHP Version**: 7.0 or higher
+- **Multisite**: Not currently supported (planned for future version)
+
+## How It Works
+
+### URL Blocking
+1. Plugin intercepts all requests to standard WordPress login URLs
+2. If user is not authenticated and doesn't have valid session token, shows 404
+3. Custom login slug is recognized and processed normally
+4. Emergency key provides backup access method
+
+### Session Management
+- When accessing custom login URL, plugin sets a temporary token (5 minutes)
+- Token allows actual wp-login.php to load without triggering 404
+- Token is cleared after use or expiration
+
+## Troubleshooting
+
+### "I can't access my login page!"
+Use your emergency access URL:
+```
+yoursite.com/?mbr_emergency=YOUR_EMERGENCY_KEY
+```
+
+### "I forgot my emergency key!"
+If you have FTP/SSH access:
+1. Connect to your server
+2. Edit `wp-config.php`
+3. Add: `define('MBR_EMERGENCY_DISABLE', true);`
+4. This temporarily disables the plugin protection
+5. Log in normally at `yoursite.com/wp-admin`
+6. Go to Settings > Custom Login to get your key
+7. Remove the line from `wp-config.php`
+
+### "Getting redirected to 404 after login"
+Clear your browser cookies and cache, then try again.
+
+### "Plugin conflicts with my caching plugin"
+You may need to exclude your custom login URL from caching:
+- WP Super Cache: Add to "Rejected URLs"
+- W3 Total Cache: Add to "Never cache the following pages"
+- WP Rocket: Add to "Never Cache URL(s)"
+
+## Customization Examples
+
+### Custom CSS Example 1: Modern Flat Design
+```css
+#login {
+    padding: 5% 0 0;
+}
+
+.login form {
+    border: none;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    border-radius: 10px;
+}
+
+.login input[type="text"],
+.login input[type="password"] {
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    padding: 10px 15px;
+}
+```
+
+### Custom CSS Example 2: Dark Theme
+```css
+body.login {
+    background: #1a1a1a;
+}
+
+.login form {
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
+}
+
+.login label {
+    color: #ffffff;
+}
+
+.login input[type="text"],
+.login input[type="password"] {
+    background: #3a3a3a;
+    border: 1px solid #4a4a4a;
+    color: #ffffff;
+}
+
+.login #backtoblog a,
+.login #nav a {
+    color: #ffffff !important;
+}
+```
+
+## Changelog
+
+### Version 1.0.0
+- Initial release
+- Custom login URL functionality
+- Emergency access system
+- Login page appearance customization
+- Color picker integration
+- Custom CSS support
+
+## Roadmap
+
+Future features being considered:
+- [ ] Multisite support
+- [ ] Login attempt logging
+- [ ] IP whitelist/blacklist
+- [ ] Time-based access restrictions
+- [ ] Two-factor authentication integration
+- [ ] Custom login redirect rules
+- [ ] Brute force protection
+
+## Support
+
+For support, feature requests, or bug reports, please visit:
+- Website: https://littlewebshack.com
+- Documentation: (Coming soon)
+
+## License
+
+This plugin is licensed under GPL v2 or later.
+
+## Credits
+
+Developed by **Made by Robert**
+- Website: https://littlewebshack.com
+- WordPress Profile: (Add your profile)
 
 ---
 
-## 🤔 The Problem
-
-The default WordPress login page has two issues:
-
-1. **Everyone knows where it lives.** `yoursite.com/wp-admin` is the first door every bot and brute-force script knocks on.
-2. **It's a bit… plain.** It's never going to win any design awards, and it certainly doesn't match your brand.
-
-**MBR Login Customiser** fixes both at once. 🎉
-
----
-
-## ✨ Features
-
-### 🔒 Security First
-
-- **Custom login URL** — Move your login away from `/wp-admin` and `/wp-login.php` to anything you like: `/secret-entrance`, `/team-login`, whatever you fancy.
-- **Bots get a 404** — Hit the old address and there's no form to attack. No foothold, no brute force, just a polite "page not found".
-- **Emergency access key** — Locked yourself out or forgotten your custom URL? A built-in backup key gets you straight back in. (Yes, I thought of that scenario. 😅)
-
-### 🎨 Make It Beautiful
-
-**Backgrounds**
-- Solid colours via a proper colour picker (no fiddly hex typing)
-- Rich gradients with full directional control
-- Full-screen background images — perfect for branded photography or patterns
-- Everything uploads straight through the WordPress Media Library
-
-**Form Styles** — three distinct looks out of the box:
-| Style | Best For |
-|-------|----------|
-| 🪟 **Default** | Clean, standard WordPress styling |
-| 🌙 **Dark Mode** | Light text on dark semi-transparent forms — ideal over colourful backgrounds |
-| 💎 **Glassmorphism** | That trendy frosted-glass blur effect — looks absolutely mint with gradients |
-
-**Typography & Effects**
-- 10+ Google Fonts, or stick with fast system fonts
-- Entrance animations: fade, slide, zoom or bounce
-- Shadow depth from subtle to dramatic, plus a coloured glow effect
-- Upload your own logo
-- Custom button colours
-- Welcome messages and footer text
-
-**For the Perfectionists**
-- A dedicated **custom CSS** field to make everything pixel-perfect
-
----
-
-## 📦 Installation
-
-1. [Download the latest release](https://littlewebshack.com/?mbr_dl=dee046a646261aa5) (`.zip`).
-2. In your WordPress dashboard, go to **Plugins → Add New → Upload Plugin**.
-3. Choose the `.zip` file and click **Install Now**.
-4. Click **Activate**.
-5. Head to the **MBR Login Customiser** settings page and start customising. 🚀
-
-> 💡 **Tip:** Make a note of your new login URL and your emergency access key before you log out for the first time!
-
----
-
-## 🛠️ Quick Start
-
-1. **Set your secret URL** — Choose a custom login slug under the Security tab.
-2. **Pick a look** — Select a form style (try Glassmorphism with a gradient background).
-3. **Add your brand** — Upload your logo, set your button colours, and write a welcome message.
-4. **Save** — and visit your new login page to admire your work. ✨
-
----
-
-## 👥 Who's It For?
-
-- 🧑‍💻 **Web designers & agencies** building branded sites for clients
-- 🛡️ **Security-conscious site owners** who want an extra layer of protection
-- 🗂️ **Anyone managing multiple WordPress sites** who's tired of the same old login screen
-- 🙌 **You** — if you just want your login page to look professional and modern
-
----
-
-## 💚 Why Free?
-
-No premium version. No upsells. No "unlock advanced features" nonsense. No tracking.
-
-I built this because I needed it for my own client projects, and figured others might find it useful too. That's how a lot of the best WordPress plugins start, right?
-
-Everything you see is everything you get. 🎁
-
----
-
-## 🗒️ Changelog
-
-### 1.0.2 — *latest*
-- Current stable release. See the [plugin page](https://littlewebshack.com/mbr-login-customiser/) for the full version history.
-
----
-
-## 💬 Support, Feedback & Feature Requests
-
-I'd genuinely love to hear from you. Whether you've found a bug, have a brilliant feature idea, or just want to say thanks — every message is read and valued.
-
-- 🐛 **Found a bug?** [Let me know](https://littlewebshack.com/contact/) and I'll fix it fast.
-- 💡 **Want a feature?** Tell me about it — the best additions come from real users.
-- ⭐ **Enjoying the plugin?** A star on this repo is hugely appreciated!
-
-The best login customiser for WordPress gets built together — your input makes all the difference.
-
----
-
-## ☕ Support the Project
-
-These plugins are free and always will be. If MBR Login Customiser has saved you time or made a site look great, you can buy me a coffee to keep the late-night coding fuelled:
-
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-yellow.svg?logo=buy-me-a-coffee)](https://buymeacoffee.com/robertpalmer)
-
----
-
-## 📄 License
-
-Released under the **GPLv2 (or later)** licence, in keeping with WordPress.
-
----
-
-<div align="center">
-
-**Built with care by [Robert Palmer](https://littlewebshack.com/about/)** · Part of the [Little Web Shack](https://littlewebshack.com/) suite of high-quality, free WordPress plugins.
-
-🌐 [littlewebshack.com](https://littlewebshack.com/) · 🐙 [@harbourbob](https://github.com/harbourbob)
-
-*A suite of free, enterprise-quality WordPress plugins — security-first, no tracking, no upsells.*
-
-</div>
+**Note**: This is a security plugin. Always test thoroughly on a staging site before deploying to production, and always maintain backup access methods.

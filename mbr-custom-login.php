@@ -3,7 +3,7 @@
  * Plugin Name: MBR Login Customiser
  * Plugin URI: https://littlewebshack.com
  * Description: Secure your WordPress login by customizing the login URL and appearance with modern design options including Dark Mode and Glassmorphism effects
- * Version: 1.02
+ * Version: 1.1.0
  * Author: Made by Robert
  * Author URI: https://littlewebshack.com
  * License: GPL v2 or later
@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('MBR_CUSTOM_LOGIN_VERSION', '1.02');
+define('MBR_CUSTOM_LOGIN_VERSION', '1.1.0');
 define('MBR_CUSTOM_LOGIN_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('MBR_CUSTOM_LOGIN_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -67,6 +67,13 @@ class MBR_Custom_Login {
         add_filter('login_headertext', array($this, 'custom_login_logo_text'));
         add_filter('login_message', array($this, 'custom_login_message'));
         add_filter('login_footer', array($this, 'custom_login_footer'));
+
+        // Login attempt limiting
+        // Priority 99 so we run after WordPress' own authentication callbacks
+        // and the lockout decision always wins, even for correct credentials.
+        add_filter('authenticate', array($this, 'check_login_lockout'), 99, 3);
+        add_action('wp_login_failed', array($this, 'record_failed_login'), 10, 1);
+        add_action('wp_login', array($this, 'clear_attempts_on_success'), 10, 2);
     }
     
     /**
@@ -620,6 +627,219 @@ class MBR_Custom_Login {
         }
     }
     
+    /* -------------------------------------------------------------------------
+     * Login attempt limiting
+     * ---------------------------------------------------------------------- */
+
+    /**
+     * Option key holding per-IP attempt/lockout data.
+     */
+    const ATTEMPT_OPTION = 'mbr_custom_login_attempt_data';
+
+    /**
+     * Get the visitor's IP address.
+     *
+     * Defaults to REMOTE_ADDR. If the site is flagged as being behind a
+     * proxy/CDN, trust the first valid public IP from the relevant header.
+     * Spoofable headers are only consulted when the admin opts in.
+     */
+    private function get_client_ip() {
+        $behind_proxy = get_option('mbr_custom_login_behind_proxy', 0);
+
+        if ($behind_proxy) {
+            $headers = array(
+                'HTTP_CF_CONNECTING_IP', // Cloudflare
+                'HTTP_TRUE_CLIENT_IP',   // Akamai / Cloudflare Enterprise
+                'HTTP_X_FORWARDED_FOR',  // Generic proxies (may be a list)
+                'HTTP_X_REAL_IP',
+            );
+
+            foreach ($headers as $header) {
+                if (empty($_SERVER[$header])) {
+                    continue;
+                }
+
+                // X-Forwarded-For can be "client, proxy1, proxy2".
+                $parts = explode(',', wp_unslash($_SERVER[$header]));
+                foreach ($parts as $candidate) {
+                    $candidate = trim($candidate);
+                    if (filter_var($candidate, FILTER_VALIDATE_IP)) {
+                        return $candidate;
+                    }
+                }
+            }
+        }
+
+        $remote = isset($_SERVER['REMOTE_ADDR']) ? wp_unslash($_SERVER['REMOTE_ADDR']) : '';
+        return filter_var($remote, FILTER_VALIDATE_IP) ? $remote : '0.0.0.0';
+    }
+
+    /**
+     * Storage key for an IP (hashed to avoid storing raw IPs as array keys).
+     */
+    private function ip_key($ip) {
+        return md5($ip);
+    }
+
+    /**
+     * Is the given IP exempt from limiting (whitelisted)?
+     */
+    private function is_ip_whitelisted($ip) {
+        $list = get_option('mbr_custom_login_whitelist_ips', '');
+        if (empty($list)) {
+            return false;
+        }
+
+        $entries = preg_split('/[\r\n]+/', $list);
+        foreach ($entries as $entry) {
+            $entry = trim($entry);
+            if ($entry !== '' && $entry === $ip) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Read the attempt data option (and prune fully-expired entries).
+     */
+    private function get_attempt_data() {
+        $data = get_option(self::ATTEMPT_OPTION, array());
+        if (!is_array($data)) {
+            $data = array();
+        }
+
+        $now = time();
+        $changed = false;
+        foreach ($data as $key => $rec) {
+            $window_done = empty($rec['window_expires']) || $rec['window_expires'] < $now;
+            $lock_done   = empty($rec['lock_until']) || $rec['lock_until'] < $now;
+            if ($window_done && $lock_done) {
+                unset($data[$key]);
+                $changed = true;
+            }
+        }
+
+        if ($changed) {
+            update_option(self::ATTEMPT_OPTION, $data, false);
+        }
+        return $data;
+    }
+
+    /**
+     * Persist the attempt data option (never autoloaded).
+     */
+    private function save_attempt_data($data) {
+        update_option(self::ATTEMPT_OPTION, $data, false);
+    }
+
+    /**
+     * Block authentication while an IP is locked out.
+     *
+     * Runs late (priority 99) so it overrides a valid WP_User result too:
+     * once locked, even correct credentials are refused until the timer ends.
+     */
+    public function check_login_lockout($user, $username, $password) {
+        // Nothing to do if no credentials were submitted (e.g. cookie auth).
+        if (empty($username) && empty($password)) {
+            return $user;
+        }
+
+        if (!get_option('mbr_custom_login_limit_enabled', 0)) {
+            return $user;
+        }
+
+        $ip = $this->get_client_ip();
+        if ($this->is_ip_whitelisted($ip)) {
+            return $user;
+        }
+
+        $data = $this->get_attempt_data();
+        $key  = $this->ip_key($ip);
+
+        if (!empty($data[$key]['lock_until']) && $data[$key]['lock_until'] > time()) {
+            $remaining = $data[$key]['lock_until'] - time();
+            $minutes   = max(1, (int) ceil($remaining / 60));
+
+            return new WP_Error(
+                'mbr_login_locked',
+                sprintf(
+                    /* translators: %d: number of minutes remaining */
+                    _n(
+                        '<strong>Too many failed attempts.</strong> Please try again in %d minute.',
+                        '<strong>Too many failed attempts.</strong> Please try again in %d minutes.',
+                        $minutes,
+                        'mbr-custom-login'
+                    ),
+                    $minutes
+                )
+            );
+        }
+
+        return $user;
+    }
+
+    /**
+     * Record a failed login and lock the IP once the limit is reached.
+     */
+    public function record_failed_login($username) {
+        if (!get_option('mbr_custom_login_limit_enabled', 0)) {
+            return;
+        }
+
+        $ip = $this->get_client_ip();
+        if ($this->is_ip_whitelisted($ip)) {
+            return;
+        }
+
+        $max          = max(1, (int) get_option('mbr_custom_login_max_attempts', 5));
+        $window_mins  = max(1, (int) get_option('mbr_custom_login_attempt_window', 15));
+        $lockout_mins = max(1, (int) get_option('mbr_custom_login_lockout_duration', 15));
+
+        $data = $this->get_attempt_data();
+        $key  = $this->ip_key($ip);
+        $now  = time();
+
+        // Already locked: don't extend the lockout on every blocked attempt.
+        if (!empty($data[$key]['lock_until']) && $data[$key]['lock_until'] > $now) {
+            return;
+        }
+
+        // Reset the counter if the rolling window has expired.
+        if (empty($data[$key]) || empty($data[$key]['window_expires']) || $data[$key]['window_expires'] < $now) {
+            $data[$key] = array(
+                'fails'          => 0,
+                'window_expires' => $now + ($window_mins * MINUTE_IN_SECONDS),
+                'lock_until'     => 0,
+            );
+        }
+
+        $data[$key]['fails']++;
+        $data[$key]['ip']   = $ip;
+        $data[$key]['last'] = $now;
+
+        if ($data[$key]['fails'] >= $max) {
+            $data[$key]['lock_until'] = $now + ($lockout_mins * MINUTE_IN_SECONDS);
+            $data[$key]['fails']      = 0; // reset so the next window starts fresh
+        }
+
+        $this->save_attempt_data($data);
+    }
+
+    /**
+     * Clear an IP's record after a successful login.
+     */
+    public function clear_attempts_on_success($user_login, $user = null) {
+        $ip   = $this->get_client_ip();
+        $data = $this->get_attempt_data();
+        $key  = $this->ip_key($ip);
+
+        if (isset($data[$key])) {
+            unset($data[$key]);
+            $this->save_attempt_data($data);
+        }
+    }
+
     /**
      * Add admin menu
      */
@@ -704,6 +924,48 @@ class MBR_Custom_Login {
         register_setting('mbr_custom_login_appearance', 'mbr_custom_login_css', array(
             'sanitize_callback' => array($this, 'sanitize_css')
         ));
+
+        // Security / Login Attempt Settings
+        register_setting('mbr_custom_login_security', 'mbr_custom_login_limit_enabled', array(
+            'sanitize_callback' => array($this, 'sanitize_checkbox')
+        ));
+        register_setting('mbr_custom_login_security', 'mbr_custom_login_max_attempts', array(
+            'sanitize_callback' => 'absint'
+        ));
+        register_setting('mbr_custom_login_security', 'mbr_custom_login_attempt_window', array(
+            'sanitize_callback' => 'absint'
+        ));
+        register_setting('mbr_custom_login_security', 'mbr_custom_login_lockout_duration', array(
+            'sanitize_callback' => 'absint'
+        ));
+        register_setting('mbr_custom_login_security', 'mbr_custom_login_behind_proxy', array(
+            'sanitize_callback' => array($this, 'sanitize_checkbox')
+        ));
+        register_setting('mbr_custom_login_security', 'mbr_custom_login_whitelist_ips', array(
+            'sanitize_callback' => array($this, 'sanitize_ip_list')
+        ));
+    }
+
+    /**
+     * Sanitize a checkbox value to 0/1.
+     */
+    public function sanitize_checkbox($value) {
+        return !empty($value) ? 1 : 0;
+    }
+
+    /**
+     * Sanitize a newline-separated IP whitelist, keeping only valid IPs.
+     */
+    public function sanitize_ip_list($list) {
+        $valid = array();
+        $entries = preg_split('/[\r\n]+/', (string) $list);
+        foreach ($entries as $entry) {
+            $entry = trim($entry);
+            if ($entry !== '' && filter_var($entry, FILTER_VALIDATE_IP)) {
+                $valid[] = $entry;
+            }
+        }
+        return implode("\n", array_unique($valid));
     }
     
     /**
@@ -776,6 +1038,23 @@ class MBR_Custom_Login {
         
         // Get current tab
         $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'url';
+
+        // Handle a manual unlock request (single IP or all).
+        if ($active_tab === 'security' && isset($_GET['mbr_unlock']) && isset($_GET['_wpnonce'])) {
+            if (wp_verify_nonce(sanitize_text_field($_GET['_wpnonce']), 'mbr_unlock')) {
+                $target = sanitize_text_field($_GET['mbr_unlock']);
+                if ($target === 'all') {
+                    $this->save_attempt_data(array());
+                } else {
+                    $data = $this->get_attempt_data();
+                    if (isset($data[$target])) {
+                        unset($data[$target]);
+                        $this->save_attempt_data($data);
+                    }
+                }
+                echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Lockout(s) cleared.', 'mbr-custom-login') . '</p></div>';
+            }
+        }
         
         ?>
         <div class="wrap">
@@ -787,6 +1066,9 @@ class MBR_Custom_Login {
                 </a>
                 <a href="?page=mbr-custom-login&tab=appearance" class="nav-tab <?php echo $active_tab === 'appearance' ? 'nav-tab-active' : ''; ?>">
                     <?php _e('Appearance', 'mbr-custom-login'); ?>
+                </a>
+                <a href="?page=mbr-custom-login&tab=security" class="nav-tab <?php echo $active_tab === 'security' ? 'nav-tab-active' : ''; ?>">
+                    <?php _e('Security', 'mbr-custom-login'); ?>
                 </a>
             </h2>
             
@@ -843,7 +1125,7 @@ class MBR_Custom_Login {
                     </table>
                     <?php submit_button(); ?>
                 </form>
-            <?php else: ?>
+            <?php elseif ($active_tab === 'appearance'): ?>
                 <form method="post" action="options.php">
                     <?php settings_fields('mbr_custom_login_appearance'); ?>
                     <table class="form-table" role="presentation">
@@ -1195,6 +1477,161 @@ class MBR_Custom_Login {
                     </table>
                     <?php submit_button(); ?>
                 </form>
+            <?php else: // Security tab ?>
+                <form method="post" action="options.php">
+                    <?php settings_fields('mbr_custom_login_security'); ?>
+                    <table class="form-table" role="presentation">
+                        <tr>
+                            <th scope="row">
+                                <?php _e('Limit Login Attempts', 'mbr-custom-login'); ?>
+                            </th>
+                            <td>
+                                <label>
+                                    <input type="checkbox"
+                                           name="mbr_custom_login_limit_enabled"
+                                           value="1"
+                                           <?php checked(get_option('mbr_custom_login_limit_enabled', 0), 1); ?>>
+                                    <?php _e('Lock out an IP address after too many failed login attempts', 'mbr-custom-login'); ?>
+                                </label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="mbr_custom_login_max_attempts">
+                                    <?php _e('Max Failed Attempts', 'mbr-custom-login'); ?>
+                                </label>
+                            </th>
+                            <td>
+                                <input type="number" min="1" max="100"
+                                       id="mbr_custom_login_max_attempts"
+                                       name="mbr_custom_login_max_attempts"
+                                       value="<?php echo esc_attr(get_option('mbr_custom_login_max_attempts', 5)); ?>"
+                                       class="small-text">
+                                <p class="description">
+                                    <?php _e('Number of failed attempts allowed before an IP is locked out.', 'mbr-custom-login'); ?>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="mbr_custom_login_attempt_window">
+                                    <?php _e('Attempt Window (minutes)', 'mbr-custom-login'); ?>
+                                </label>
+                            </th>
+                            <td>
+                                <input type="number" min="1" max="1440"
+                                       id="mbr_custom_login_attempt_window"
+                                       name="mbr_custom_login_attempt_window"
+                                       value="<?php echo esc_attr(get_option('mbr_custom_login_attempt_window', 15)); ?>"
+                                       class="small-text">
+                                <p class="description">
+                                    <?php _e('Failed attempts are counted within this rolling window. Older failures are forgiven.', 'mbr-custom-login'); ?>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="mbr_custom_login_lockout_duration">
+                                    <?php _e('Lockout Duration (minutes)', 'mbr-custom-login'); ?>
+                                </label>
+                            </th>
+                            <td>
+                                <input type="number" min="1" max="10080"
+                                       id="mbr_custom_login_lockout_duration"
+                                       name="mbr_custom_login_lockout_duration"
+                                       value="<?php echo esc_attr(get_option('mbr_custom_login_lockout_duration', 15)); ?>"
+                                       class="small-text">
+                                <p class="description">
+                                    <?php _e('How long a locked-out IP must wait before it can try again.', 'mbr-custom-login'); ?>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <?php _e('Behind a Proxy / CDN', 'mbr-custom-login'); ?>
+                            </th>
+                            <td>
+                                <label>
+                                    <input type="checkbox"
+                                           name="mbr_custom_login_behind_proxy"
+                                           value="1"
+                                           <?php checked(get_option('mbr_custom_login_behind_proxy', 0), 1); ?>>
+                                    <?php _e('My site sits behind Cloudflare or another reverse proxy', 'mbr-custom-login'); ?>
+                                </label>
+                                <p class="description">
+                                    <?php _e('Enable this so the real visitor IP is read from proxy headers instead of the proxy\'s own address. Leave off if you are not behind a proxy, as these headers can otherwise be spoofed.', 'mbr-custom-login'); ?>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="mbr_custom_login_whitelist_ips">
+                                    <?php _e('Whitelisted IPs', 'mbr-custom-login'); ?>
+                                </label>
+                            </th>
+                            <td>
+                                <textarea id="mbr_custom_login_whitelist_ips"
+                                          name="mbr_custom_login_whitelist_ips"
+                                          rows="4"
+                                          class="large-text code"><?php echo esc_textarea(get_option('mbr_custom_login_whitelist_ips', '')); ?></textarea>
+                                <p class="description">
+                                    <?php
+                                    printf(
+                                        __('One IP address per line. These are never locked out. Your current IP: %s', 'mbr-custom-login'),
+                                        '<code>' . esc_html($this->get_client_ip()) . '</code>'
+                                    );
+                                    ?>
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                    <?php submit_button(); ?>
+                </form>
+
+                <?php
+                // Active lockouts table.
+                $data = $this->get_attempt_data();
+                $now  = time();
+                $locked = array();
+                foreach ($data as $key => $rec) {
+                    if (!empty($rec['lock_until']) && $rec['lock_until'] > $now) {
+                        $locked[$key] = $rec;
+                    }
+                }
+                ?>
+                <h2><?php _e('Currently Locked Out', 'mbr-custom-login'); ?></h2>
+                <?php if (empty($locked)): ?>
+                    <p><?php _e('No IP addresses are currently locked out.', 'mbr-custom-login'); ?></p>
+                <?php else: ?>
+                    <table class="widefat striped" style="max-width:640px;">
+                        <thead>
+                            <tr>
+                                <th><?php _e('IP Address', 'mbr-custom-login'); ?></th>
+                                <th><?php _e('Unlocks In', 'mbr-custom-login'); ?></th>
+                                <th><?php _e('Action', 'mbr-custom-login'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($locked as $key => $rec):
+                                $mins = max(1, (int) ceil(($rec['lock_until'] - $now) / 60));
+                                $unlock_url = wp_nonce_url(
+                                    admin_url('options-general.php?page=mbr-custom-login&tab=security&mbr_unlock=' . $key),
+                                    'mbr_unlock'
+                                );
+                            ?>
+                                <tr>
+                                    <td><code><?php echo esc_html(isset($rec['ip']) ? $rec['ip'] : __('unknown', 'mbr-custom-login')); ?></code></td>
+                                    <td><?php printf(_n('%d minute', '%d minutes', $mins, 'mbr-custom-login'), $mins); ?></td>
+                                    <td><a href="<?php echo esc_url($unlock_url); ?>" class="button button-small"><?php _e('Unlock', 'mbr-custom-login'); ?></a></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    <p>
+                        <a href="<?php echo esc_url(wp_nonce_url(admin_url('options-general.php?page=mbr-custom-login&tab=security&mbr_unlock=all'), 'mbr_unlock')); ?>"
+                           class="button"><?php _e('Clear All Lockouts', 'mbr-custom-login'); ?></a>
+                    </p>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
         <?php
@@ -1212,6 +1649,14 @@ register_activation_hook(__FILE__, function() {
     // Set default options
     add_option('mbr_custom_login_slug', 'login');
     add_option('mbr_custom_login_emergency_key', wp_generate_password(32, false));
+
+    // Login limiting defaults (off until the admin enables it)
+    add_option('mbr_custom_login_limit_enabled', 0);
+    add_option('mbr_custom_login_max_attempts', 5);
+    add_option('mbr_custom_login_attempt_window', 15);
+    add_option('mbr_custom_login_lockout_duration', 15);
+    add_option('mbr_custom_login_behind_proxy', 0);
+    add_option('mbr_custom_login_whitelist_ips', '');
     
     // Flush rewrite rules
     flush_rewrite_rules();
