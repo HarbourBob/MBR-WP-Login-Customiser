@@ -3,7 +3,7 @@ Contributors: madebyrob
 Tags: login, security, customization, branding, custom-login
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -108,6 +108,15 @@ No. This plugin focuses on login URL customization and appearance. Use it alongs
 
 == Changelog ==
 
+= 1.1.1 =
+* Security: Hardened brute-force protection against spoofed proxy headers. Behind a proxy/CDN the visitor IP is now read from a single, admin-selected trusted header instead of guessing across several spoofable ones
+* Security: Added a "Trusted IP Header" selector to the Security tab (Cloudflare, Akamai/True-Client-IP, nginx X-Real-IP, or generic X-Forwarded-For)
+* Security: Emergency access key is now compared in constant time (hash_equals) to remove a theoretical timing side-channel
+* Security: Constrained the gradient direction value to a fixed allowlist to remove a CSS-injection vector
+* Security: Login pass-through cookie now sets SameSite=Lax (PHP 7.3+)
+* Hardening: Capped the stored failed-attempt records to prevent unbounded option growth under distributed attacks
+* Hardening: Added wp_unslash() to request data read from $_SERVER and $_GET
+
 = 1.1.0 =
 * Added: Limit Login Attempts - lock out an IP after a configurable number of failed logins
 * Added: Security tab with max attempts, attempt window and lockout duration controls
@@ -147,6 +156,9 @@ No. This plugin focuses on login URL customization and appearance. Use it alongs
 * Custom CSS support
 
 == Upgrade Notice ==
+
+= 1.1.1 =
+Security hardening release. Strengthens brute-force protection behind proxies/CDNs, makes the emergency-key check constant-time, and tightens input handling. Recommended for all users.
 
 = 1.02 =
 Major update adding custom fonts, animations, enhanced shadows, and footer text. Improved Dark Mode and Glassmorphism styling. Highly recommended upgrade.

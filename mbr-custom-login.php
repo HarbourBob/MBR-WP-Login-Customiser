@@ -3,7 +3,7 @@
  * Plugin Name: MBR Login Customiser
  * Plugin URI: https://littlewebshack.com
  * Description: Secure your WordPress login by customizing the login URL and appearance with modern design options including Dark Mode and Glassmorphism effects
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: Made by Robert
  * Author URI: https://littlewebshack.com
  * License: GPL v2 or later
@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('MBR_CUSTOM_LOGIN_VERSION', '1.1.0');
+define('MBR_CUSTOM_LOGIN_VERSION', '1.1.1');
 define('MBR_CUSTOM_LOGIN_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('MBR_CUSTOM_LOGIN_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -88,8 +88,9 @@ class MBR_Custom_Login {
      */
     public function handle_custom_login_url() {
         // Check if we're on the custom login URL
-        $request_uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        $request_uri = rtrim($request_uri, '/');
+        $raw_uri     = isset($_SERVER['REQUEST_URI']) ? wp_unslash($_SERVER['REQUEST_URI']) : '';
+        $request_uri = parse_url($raw_uri, PHP_URL_PATH);
+        $request_uri = rtrim((string) $request_uri, '/');
         $home_path = trim(parse_url(home_url(), PHP_URL_PATH), '/');
         
         // Remove home path from request URI
@@ -98,9 +99,12 @@ class MBR_Custom_Login {
         }
         $request_uri = ltrim($request_uri, '/');
         
-        // Check for emergency access
+        // Check for emergency access.
+        // hash_equals() guarantees a constant-time comparison so the secret
+        // key cannot be recovered by measuring response timing.
         if (isset($_GET['mbr_emergency']) && !empty($this->emergency_key)) {
-            if ($_GET['mbr_emergency'] === $this->emergency_key) {
+            $supplied = (string) wp_unslash($_GET['mbr_emergency']);
+            if (hash_equals((string) $this->emergency_key, $supplied)) {
                 $this->redirect_to_login();
                 exit;
             }
@@ -118,7 +122,7 @@ class MBR_Custom_Login {
      */
     private function redirect_to_login() {
         // Preserve query parameters
-        $query_string = $_SERVER['QUERY_STRING'];
+        $query_string = isset($_SERVER['QUERY_STRING']) ? wp_unslash($_SERVER['QUERY_STRING']) : '';
         parse_str($query_string, $query_params);
         
         // Remove our emergency key from params
@@ -134,10 +138,31 @@ class MBR_Custom_Login {
         // Set a cookie/transient to allow this session through
         $token = wp_generate_password(32, false);
         set_transient('mbr_login_allowed_' . $token, true, 300); // 5 minutes
-        setcookie('mbr_login_token', $token, time() + 300, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true);
+        $this->set_login_token_cookie($token, time() + 300);
         
         require_once ABSPATH . 'wp-login.php';
         exit;
+    }
+
+    /**
+     * Set the short-lived login pass-through cookie.
+     *
+     * Adds SameSite=Lax. PHP 7.3+ accepts an options array; older versions
+     * fall back to the legacy signature so the plugin still works on PHP 7.0.
+     */
+    private function set_login_token_cookie($token, $expires) {
+        if (PHP_VERSION_ID >= 70300) {
+            setcookie('mbr_login_token', $token, array(
+                'expires'  => $expires,
+                'path'     => COOKIEPATH,
+                'domain'   => COOKIE_DOMAIN,
+                'secure'   => is_ssl(),
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ));
+        } else {
+            setcookie('mbr_login_token', $token, $expires, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true);
+        }
     }
     
     /**
@@ -217,6 +242,15 @@ class MBR_Custom_Login {
         $custom_bg_gradient_start = get_option('mbr_custom_login_bg_gradient_start', '#667eea');
         $custom_bg_gradient_end = get_option('mbr_custom_login_bg_gradient_end', '#764ba2');
         $custom_bg_gradient_direction = get_option('mbr_custom_login_bg_gradient_direction', 'to bottom right');
+        // Constrain to a known-good set so nothing arbitrary reaches the CSS
+        // context (esc_attr does not neutralise CSS metacharacters like ) ; { }).
+        $allowed_directions = array(
+            'to bottom', 'to top', 'to right', 'to left',
+            'to bottom right', 'to bottom left',
+        );
+        if (!in_array($custom_bg_gradient_direction, $allowed_directions, true)) {
+            $custom_bg_gradient_direction = 'to bottom right';
+        }
         $custom_bg_image = get_option('mbr_custom_login_bg_image', '');
         $form_style = get_option('mbr_custom_login_form_style', 'default');
         $custom_button_color = get_option('mbr_custom_login_button_color', '#2271b1');
@@ -637,35 +671,60 @@ class MBR_Custom_Login {
     const ATTEMPT_OPTION = 'mbr_custom_login_attempt_data';
 
     /**
+     * Hard ceiling on the number of tracked IP records.
+     *
+     * The attempt data lives in a single option row. Under a distributed
+     * brute-force attack (many source IPs) this could otherwise grow without
+     * bound and bloat the row that is read and written on every failed login.
+     * Active lockouts are always kept; the oldest non-locked records are
+     * dropped first once the cap is reached.
+     */
+    const MAX_TRACKED_IPS = 2000;
+
+    /**
      * Get the visitor's IP address.
      *
-     * Defaults to REMOTE_ADDR. If the site is flagged as being behind a
-     * proxy/CDN, trust the first valid public IP from the relevant header.
-     * Spoofable headers are only consulted when the admin opts in.
+     * Defaults to REMOTE_ADDR, which the web server sets and a client cannot
+     * forge. If the site is flagged as being behind a proxy/CDN, the real
+     * client IP is read from a SINGLE admin-chosen header.
+     *
+     * Earlier versions walked a list of headers and trusted the first valid
+     * value found. Because any of those headers (X-Forwarded-For, X-Real-IP)
+     * can be sent by an attacker hitting the origin directly, that allowed the
+     * lockout to be evaded (rotate the header) or weaponised (send a victim's
+     * IP). Trusting exactly one header that the chosen CDN is known to set
+     * closes that gap. The admin is responsible for ensuring the origin only
+     * accepts traffic from that proxy.
      */
     private function get_client_ip() {
         $behind_proxy = get_option('mbr_custom_login_behind_proxy', 0);
 
         if ($behind_proxy) {
-            $headers = array(
+            $header = get_option('mbr_custom_login_proxy_header', 'HTTP_CF_CONNECTING_IP');
+            $allowed_headers = array(
                 'HTTP_CF_CONNECTING_IP', // Cloudflare
                 'HTTP_TRUE_CLIENT_IP',   // Akamai / Cloudflare Enterprise
+                'HTTP_X_REAL_IP',        // Common nginx reverse proxy
                 'HTTP_X_FORWARDED_FOR',  // Generic proxies (may be a list)
-                'HTTP_X_REAL_IP',
             );
+            if (!in_array($header, $allowed_headers, true)) {
+                $header = 'HTTP_CF_CONNECTING_IP';
+            }
 
-            foreach ($headers as $header) {
-                if (empty($_SERVER[$header])) {
-                    continue;
+            if (!empty($_SERVER[$header])) {
+                $value = wp_unslash($_SERVER[$header]);
+
+                // X-Forwarded-For may be "client, proxy1, proxy2"; the first
+                // entry is the originating client as recorded by the proxy.
+                if ($header === 'HTTP_X_FORWARDED_FOR') {
+                    $parts = explode(',', $value);
+                    $value = trim($parts[0]);
+                } else {
+                    $value = trim($value);
                 }
 
-                // X-Forwarded-For can be "client, proxy1, proxy2".
-                $parts = explode(',', wp_unslash($_SERVER[$header]));
-                foreach ($parts as $candidate) {
-                    $candidate = trim($candidate);
-                    if (filter_var($candidate, FILTER_VALIDATE_IP)) {
-                        return $candidate;
-                    }
+                if (filter_var($value, FILTER_VALIDATE_IP)) {
+                    return $value;
                 }
             }
         }
@@ -823,6 +882,27 @@ class MBR_Custom_Login {
             $data[$key]['fails']      = 0; // reset so the next window starts fresh
         }
 
+        // Keep the store bounded. Never evict an active lockout; drop the
+        // least-recently-seen non-locked records until we are under the cap.
+        if (count($data) > self::MAX_TRACKED_IPS) {
+            $evictable = array();
+            foreach ($data as $k => $rec) {
+                if (empty($rec['lock_until']) || $rec['lock_until'] <= $now) {
+                    $evictable[$k] = isset($rec['last']) ? $rec['last'] : 0;
+                }
+            }
+            asort($evictable); // oldest 'last' first
+            foreach (array_keys($evictable) as $k) {
+                if (count($data) <= self::MAX_TRACKED_IPS) {
+                    break;
+                }
+                if ($k === $key) {
+                    continue; // don't drop the record we just touched
+                }
+                unset($data[$k]);
+            }
+        }
+
         $this->save_attempt_data($data);
     }
 
@@ -907,7 +987,9 @@ class MBR_Custom_Login {
         register_setting('mbr_custom_login_appearance', 'mbr_custom_login_bg_color', 'sanitize_hex_color');
         register_setting('mbr_custom_login_appearance', 'mbr_custom_login_bg_gradient_start', 'sanitize_hex_color');
         register_setting('mbr_custom_login_appearance', 'mbr_custom_login_bg_gradient_end', 'sanitize_hex_color');
-        register_setting('mbr_custom_login_appearance', 'mbr_custom_login_bg_gradient_direction', 'sanitize_text_field');
+        register_setting('mbr_custom_login_appearance', 'mbr_custom_login_bg_gradient_direction', array(
+            'sanitize_callback' => array($this, 'sanitize_gradient_direction')
+        ));
         register_setting('mbr_custom_login_appearance', 'mbr_custom_login_bg_image', 'esc_url_raw');
         register_setting('mbr_custom_login_appearance', 'mbr_custom_login_form_style', array(
             'sanitize_callback' => array($this, 'sanitize_form_style')
@@ -941,6 +1023,9 @@ class MBR_Custom_Login {
         register_setting('mbr_custom_login_security', 'mbr_custom_login_behind_proxy', array(
             'sanitize_callback' => array($this, 'sanitize_checkbox')
         ));
+        register_setting('mbr_custom_login_security', 'mbr_custom_login_proxy_header', array(
+            'sanitize_callback' => array($this, 'sanitize_proxy_header')
+        ));
         register_setting('mbr_custom_login_security', 'mbr_custom_login_whitelist_ips', array(
             'sanitize_callback' => array($this, 'sanitize_ip_list')
         ));
@@ -951,6 +1036,19 @@ class MBR_Custom_Login {
      */
     public function sanitize_checkbox($value) {
         return !empty($value) ? 1 : 0;
+    }
+
+    /**
+     * Sanitize the chosen trusted proxy header against an allowlist.
+     */
+    public function sanitize_proxy_header($value) {
+        $allowed = array(
+            'HTTP_CF_CONNECTING_IP',
+            'HTTP_TRUE_CLIENT_IP',
+            'HTTP_X_REAL_IP',
+            'HTTP_X_FORWARDED_FOR',
+        );
+        return in_array($value, $allowed, true) ? $value : 'HTTP_CF_CONNECTING_IP';
     }
 
     /**
@@ -998,6 +1096,17 @@ class MBR_Custom_Login {
     public function sanitize_bg_type($type) {
         $allowed = array('color', 'gradient', 'image');
         return in_array($type, $allowed) ? $type : 'color';
+    }
+
+    /**
+     * Sanitize gradient direction against a fixed allowlist.
+     */
+    public function sanitize_gradient_direction($direction) {
+        $allowed = array(
+            'to bottom', 'to top', 'to right', 'to left',
+            'to bottom right', 'to bottom left',
+        );
+        return in_array($direction, $allowed, true) ? $direction : 'to bottom right';
     }
     
     /**
@@ -1565,6 +1674,25 @@ class MBR_Custom_Login {
                         </tr>
                         <tr>
                             <th scope="row">
+                                <label for="mbr_custom_login_proxy_header">
+                                    <?php _e('Trusted IP Header', 'mbr-custom-login'); ?>
+                                </label>
+                            </th>
+                            <td>
+                                <?php $proxy_header = get_option('mbr_custom_login_proxy_header', 'HTTP_CF_CONNECTING_IP'); ?>
+                                <select id="mbr_custom_login_proxy_header" name="mbr_custom_login_proxy_header">
+                                    <option value="HTTP_CF_CONNECTING_IP" <?php selected($proxy_header, 'HTTP_CF_CONNECTING_IP'); ?>>Cloudflare (CF-Connecting-IP)</option>
+                                    <option value="HTTP_TRUE_CLIENT_IP" <?php selected($proxy_header, 'HTTP_TRUE_CLIENT_IP'); ?>>Akamai / Cloudflare Enterprise (True-Client-IP)</option>
+                                    <option value="HTTP_X_REAL_IP" <?php selected($proxy_header, 'HTTP_X_REAL_IP'); ?>>nginx (X-Real-IP)</option>
+                                    <option value="HTTP_X_FORWARDED_FOR" <?php selected($proxy_header, 'HTTP_X_FORWARDED_FOR'); ?>>Generic (X-Forwarded-For)</option>
+                                </select>
+                                <p class="description">
+                                    <?php _e('Only used when the proxy/CDN option above is enabled. Choose the single header your proxy sets, and make sure your origin server only accepts traffic from that proxy, otherwise this header can be spoofed.', 'mbr-custom-login'); ?>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
                                 <label for="mbr_custom_login_whitelist_ips">
                                     <?php _e('Whitelisted IPs', 'mbr-custom-login'); ?>
                                 </label>
@@ -1656,6 +1784,7 @@ register_activation_hook(__FILE__, function() {
     add_option('mbr_custom_login_attempt_window', 15);
     add_option('mbr_custom_login_lockout_duration', 15);
     add_option('mbr_custom_login_behind_proxy', 0);
+    add_option('mbr_custom_login_proxy_header', 'HTTP_CF_CONNECTING_IP');
     add_option('mbr_custom_login_whitelist_ips', '');
     
     // Flush rewrite rules

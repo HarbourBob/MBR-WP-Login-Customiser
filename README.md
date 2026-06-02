@@ -171,6 +171,13 @@ body.login {
 
 ## Changelog
 
+### Version 1.1.1
+- Security: trusted-proxy-header selection for accurate, non-spoofable IP detection behind a CDN
+- Security: constant-time emergency-key comparison
+- Security: gradient direction restricted to an allowlist
+- Security: SameSite=Lax on the login pass-through cookie
+- Hardening: bounded failed-attempt storage and unslashed request input
+
 ### Version 1.0.0
 - Initial release
 - Custom login URL functionality
