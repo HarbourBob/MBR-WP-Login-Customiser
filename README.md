@@ -201,11 +201,6 @@ Future features being considered:
 
 This plugin is licensed under GPL v2 or later.
 
-## Credits
-
-Developed by **Made by Robert**
-- Website: https://littlewebshack.com
-- WordPress Profile: (Add your profile)
 
 ---
 
