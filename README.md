@@ -197,12 +197,6 @@ Future features being considered:
 - [ ] Custom login redirect rules
 - [ ] Brute force protection
 
-## Support
-
-For support, feature requests, or bug reports, please visit:
-- Website: https://littlewebshack.com
-- Documentation: (Coming soon)
-
 ## License
 
 This plugin is licensed under GPL v2 or later.
