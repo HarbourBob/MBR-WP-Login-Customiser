@@ -1,7 +1,55 @@
 jQuery(document).ready(function($) {
-    
-    // Initialize color pickers
-    $('.color-picker').wpColorPicker();
+
+    // Initialise colour pickers.
+    //
+    // wpColorPicker()/Iris renders at zero width if its field is hidden at the
+    // moment it initialises. The gradient fields live in a row that is hidden
+    // until "Gradient" is chosen, so initialising them eagerly leaves them
+    // broken when later revealed. Instead we initialise each picker lazily the
+    // first time its field is visible, and again whenever the background type
+    // changes and reveals new fields.
+    function initColorPicker($field) {
+        if (!$field.data('mbrCpDone')) {
+            $field.data('mbrCpDone', true).wpColorPicker();
+        }
+    }
+
+    function initVisibleColorPickers() {
+        $('.color-picker:visible').each(function() {
+            initColorPicker($(this));
+        });
+    }
+
+    initVisibleColorPickers();
+
+    // Redirect rules repeater (progressive enhancement; the form works without
+    // it, one rule per save).
+    var $redirectRows = $('#mbr-redirect-rows');
+    if ($redirectRows.length) {
+        var redirectIdx = $redirectRows.find('.mbr-redirect-row').length;
+        $('#mbr-add-redirect').on('click', function(e) {
+            e.preventDefault();
+            var $row = $redirectRows.find('.mbr-redirect-row').first().clone();
+            $row.find('input').val('');
+            $row.find('select').prop('selectedIndex', 0);
+            $row.find('select, input').each(function() {
+                var name = $(this).attr('name');
+                if (name) {
+                    $(this).attr('name', name.replace(/\[\d+\]/, '[' + redirectIdx + ']'));
+                }
+            });
+            $redirectRows.append($row);
+            redirectIdx++;
+        });
+        $redirectRows.on('click', '.mbr-remove-redirect', function(e) {
+            e.preventDefault();
+            if ($redirectRows.find('.mbr-redirect-row').length > 1) {
+                $(this).closest('.mbr-redirect-row').remove();
+            } else {
+                $(this).closest('.mbr-redirect-row').find('input').val('');
+            }
+        });
+    }
     
     // Media uploader for logo
     var logoUploader;
@@ -110,6 +158,10 @@ jQuery(document).ready(function($) {
         } else if (selectedType === 'image') {
             $('.bg-image').show();
         }
+
+        // Now that new rows may be visible, initialise any colour pickers in
+        // them (e.g. the gradient start/end fields on first reveal).
+        initVisibleColorPickers();
     });
     
     // Generate emergency key button handler

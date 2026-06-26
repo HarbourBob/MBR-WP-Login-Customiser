@@ -1,0 +1,400 @@
+# Copyright (C) 2026 Robert Palmer
+# This file is distributed under the GPL v2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: MBR Login Customiser 1.1.2\n"
+"Report-Msgid-Bugs-To: https://littlewebshack.com/\n"
+"POT-Creation-Date: 2026-06-09 18:13+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Domain: mbr-login-customiser\n"
+
+#: mbr-login-customiser.php:206
+msgid "Page not found"
+msgstr ""
+
+#: mbr-login-customiser.php:930
+msgid "MBR Login Customiser"
+msgstr ""
+
+#: mbr-login-customiser.php:931
+msgid "Login Customiser"
+msgstr ""
+
+#: mbr-login-customiser.php:1126
+msgid "This slug is reserved. Please choose another."
+msgstr ""
+
+#: mbr-login-customiser.php:1169
+msgid "Lockout(s) cleared."
+msgstr ""
+
+#: mbr-login-customiser.php:1179
+msgid "Login URL"
+msgstr ""
+
+#: mbr-login-customiser.php:1182
+msgid "Appearance"
+msgstr ""
+
+#: mbr-login-customiser.php:1185
+msgid "Security"
+msgstr ""
+
+#: mbr-login-customiser.php:1198
+msgid "Custom Login Slug"
+msgstr ""
+
+#. translators: %s: the login page URL, wrapped in a <code> element.
+#: mbr-login-customiser.php:1211
+msgid "Your login page will be: %s"
+msgstr ""
+
+#: mbr-login-customiser.php:1221
+msgid "Emergency Access Key"
+msgstr ""
+
+#: mbr-login-customiser.php:1231
+msgid "If you forget your login URL, you can access it using:"
+msgstr ""
+
+#: mbr-login-customiser.php:1236
+msgid "Generate New Key"
+msgstr ""
+
+#: mbr-login-customiser.php:1250
+msgid "Custom Logo"
+msgstr ""
+
+#: mbr-login-customiser.php:1267
+msgid "Choose Logo"
+msgstr ""
+
+#: mbr-login-customiser.php:1270
+msgid "Remove Logo"
+msgstr ""
+
+#: mbr-login-customiser.php:1273
+msgid "Recommended size: 320x80 pixels"
+msgstr ""
+
+#: mbr-login-customiser.php:1280
+msgid "Logo Link URL"
+msgstr ""
+
+#: mbr-login-customiser.php:1290
+msgid "Where should the logo link to?"
+msgstr ""
+
+#: mbr-login-customiser.php:1297
+msgid "Logo Title Text"
+msgstr ""
+
+#: mbr-login-customiser.php:1307
+msgid "Hover text for the logo"
+msgstr ""
+
+#: mbr-login-customiser.php:1314
+msgid "Welcome Message"
+msgstr ""
+
+#: mbr-login-customiser.php:1323
+msgid "Optional message to display above the login form"
+msgstr ""
+
+#: mbr-login-customiser.php:1329
+msgid "Background Type"
+msgstr ""
+
+#: mbr-login-customiser.php:1339
+msgid "Solid Color"
+msgstr ""
+
+#: mbr-login-customiser.php:1347
+msgid "Gradient"
+msgstr ""
+
+#: mbr-login-customiser.php:1355
+msgid "Image"
+msgstr ""
+
+#: mbr-login-customiser.php:1362
+msgid "Background Color"
+msgstr ""
+
+#: mbr-login-customiser.php:1376
+msgid "Gradient Start Color"
+msgstr ""
+
+#: mbr-login-customiser.php:1390
+msgid "Gradient End Color"
+msgstr ""
+
+#: mbr-login-customiser.php:1404
+msgid "Gradient Direction"
+msgstr ""
+
+#: mbr-login-customiser.php:1409
+msgid "Top to Bottom"
+msgstr ""
+
+#: mbr-login-customiser.php:1410
+msgid "Bottom to Top"
+msgstr ""
+
+#: mbr-login-customiser.php:1411
+msgid "Left to Right"
+msgstr ""
+
+#: mbr-login-customiser.php:1412
+msgid "Right to Left"
+msgstr ""
+
+#: mbr-login-customiser.php:1413
+msgid "Diagonal (Top-Left to Bottom-Right)"
+msgstr ""
+
+#: mbr-login-customiser.php:1414
+msgid "Diagonal (Top-Right to Bottom-Left)"
+msgstr ""
+
+#: mbr-login-customiser.php:1421
+msgid "Background Image"
+msgstr ""
+
+#: mbr-login-customiser.php:1438
+msgid "Choose Background Image"
+msgstr ""
+
+#: mbr-login-customiser.php:1441
+msgid "Remove Background"
+msgstr ""
+
+#: mbr-login-customiser.php:1444
+msgid "Recommended size: 1920x1080 pixels or larger for best results"
+msgstr ""
+
+#: mbr-login-customiser.php:1451
+msgid "Button Color"
+msgstr ""
+
+#: mbr-login-customiser.php:1464
+msgid "Form Style"
+msgstr ""
+
+#: mbr-login-customiser.php:1473
+msgid "Default (Standard WordPress)"
+msgstr ""
+
+#: mbr-login-customiser.php:1480
+msgid "Dark Mode"
+msgstr ""
+
+#: mbr-login-customiser.php:1482
+msgid "Dark themed form with light text - works great with colorful backgrounds"
+msgstr ""
+
+#: mbr-login-customiser.php:1490
+msgid "Glassmorphism"
+msgstr ""
+
+#: mbr-login-customiser.php:1492
+msgid "Modern frosted glass effect with blur - best with gradient or image backgrounds"
+msgstr ""
+
+#: mbr-login-customiser.php:1500
+msgid "Custom CSS"
+msgstr ""
+
+#: mbr-login-customiser.php:1509
+msgid "Advanced: Add your own CSS to further customize the login page"
+msgstr ""
+
+#: mbr-login-customiser.php:1516
+msgid "Font Family"
+msgstr ""
+
+#: mbr-login-customiser.php:1521
+msgid "Default WordPress Font"
+msgstr ""
+
+#: mbr-login-customiser.php:1522
+msgid "System Font Stack"
+msgstr ""
+
+#: mbr-login-customiser.php:1534
+msgid "Choose a custom font for the login page (Google Fonts)"
+msgstr ""
+
+#: mbr-login-customiser.php:1541
+msgid "Form Animation"
+msgstr ""
+
+#: mbr-login-customiser.php:1546 mbr-login-customiser.php:1565
+msgid "None"
+msgstr ""
+
+#: mbr-login-customiser.php:1547
+msgid "Fade In"
+msgstr ""
+
+#: mbr-login-customiser.php:1548
+msgid "Slide Down"
+msgstr ""
+
+#: mbr-login-customiser.php:1549
+msgid "Zoom In"
+msgstr ""
+
+#: mbr-login-customiser.php:1550
+msgid "Bounce"
+msgstr ""
+
+#: mbr-login-customiser.php:1553
+msgid "Animation effect when the login form loads"
+msgstr ""
+
+#: mbr-login-customiser.php:1560
+msgid "Form Shadow"
+msgstr ""
+
+#: mbr-login-customiser.php:1566
+msgid "Subtle"
+msgstr ""
+
+#: mbr-login-customiser.php:1567
+msgid "Medium"
+msgstr ""
+
+#: mbr-login-customiser.php:1568
+msgid "Strong"
+msgstr ""
+
+#: mbr-login-customiser.php:1569
+msgid "Glow (uses button color)"
+msgstr ""
+
+#: mbr-login-customiser.php:1572
+msgid "Shadow depth for the login form box"
+msgstr ""
+
+#: mbr-login-customiser.php:1579
+msgid "Footer Text"
+msgstr ""
+
+#: mbr-login-customiser.php:1588
+msgid "Custom footer text or HTML to display at the bottom of the login page"
+msgstr ""
+
+#: mbr-login-customiser.php:1601
+msgid "Limit Login Attempts"
+msgstr ""
+
+#: mbr-login-customiser.php:1609
+msgid "Lock out an IP address after too many failed login attempts"
+msgstr ""
+
+#: mbr-login-customiser.php:1616
+msgid "Max Failed Attempts"
+msgstr ""
+
+#: mbr-login-customiser.php:1626
+msgid "Number of failed attempts allowed before an IP is locked out."
+msgstr ""
+
+#: mbr-login-customiser.php:1633
+msgid "Attempt Window (minutes)"
+msgstr ""
+
+#: mbr-login-customiser.php:1643
+msgid "Failed attempts are counted within this rolling window. Older failures are forgiven."
+msgstr ""
+
+#: mbr-login-customiser.php:1650
+msgid "Lockout Duration (minutes)"
+msgstr ""
+
+#: mbr-login-customiser.php:1660
+msgid "How long a locked-out IP must wait before it can try again."
+msgstr ""
+
+#: mbr-login-customiser.php:1666
+msgid "Behind a Proxy / CDN"
+msgstr ""
+
+#: mbr-login-customiser.php:1674
+msgid "My site sits behind Cloudflare or another reverse proxy"
+msgstr ""
+
+#: mbr-login-customiser.php:1677
+msgid "Enable this so the real visitor IP is read from proxy headers instead of the proxy's own address. Leave off if you are not behind a proxy, as these headers can otherwise be spoofed."
+msgstr ""
+
+#: mbr-login-customiser.php:1684
+msgid "Trusted IP Header"
+msgstr ""
+
+#: mbr-login-customiser.php:1696
+msgid "Only used when the proxy/CDN option above is enabled. Choose the single header your proxy sets, and make sure your origin server only accepts traffic from that proxy, otherwise this header can be spoofed."
+msgstr ""
+
+#: mbr-login-customiser.php:1703
+msgid "Whitelisted IPs"
+msgstr ""
+
+#. translators: %s: the visitor's current IP address, wrapped in a <code> element.
+#: mbr-login-customiser.php:1715
+msgid "One IP address per line. These are never locked out. Your current IP: %s"
+msgstr ""
+
+#: mbr-login-customiser.php:1737
+msgid "Currently Locked Out"
+msgstr ""
+
+#: mbr-login-customiser.php:1739
+msgid "No IP addresses are currently locked out."
+msgstr ""
+
+#: mbr-login-customiser.php:1744
+msgid "IP Address"
+msgstr ""
+
+#: mbr-login-customiser.php:1745
+msgid "Unlocks In"
+msgstr ""
+
+#: mbr-login-customiser.php:1746
+msgid "Action"
+msgstr ""
+
+#: mbr-login-customiser.php:1758
+msgid "unknown"
+msgstr ""
+
+#: mbr-login-customiser.php:1765
+msgid "Unlock"
+msgstr ""
+
+#: mbr-login-customiser.php:1772
+msgid "Clear All Lockouts"
+msgstr ""
+
+#. translators: %d: number of minutes remaining
+#: mbr-login-customiser.php:829
+msgid "<strong>Too many failed attempts.</strong> Please try again in %d minute."
+msgid_plural "<strong>Too many failed attempts.</strong> Please try again in %d minutes."
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %d: number of minutes remaining until the IP lockout expires.
+#: mbr-login-customiser.php:1762
+msgid "%d minute"
+msgid_plural "%d minutes"
+msgstr[0] ""
+msgstr[1] ""

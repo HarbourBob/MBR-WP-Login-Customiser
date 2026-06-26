@@ -1,9 +1,9 @@
 === MBR Login Customiser ===
-Contributors: madebyrob
+Contributors: Robert Palmer
 Tags: login, security, customization, branding, custom-login
 Requires at least: 5.0
-Tested up to: 6.7
-Stable tag: 1.1.1
+Tested up to: 7.00
+Stable tag: 1.9.1
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -13,6 +13,8 @@ Secure and customize your WordPress login page with custom URLs, stunning visual
 == Description ==
 
 MBR Login Customiser is a comprehensive security and customization plugin that allows you to completely transform your WordPress login experience. Hide your login page from automated attacks by using a custom URL, then brand it beautifully with modern design options including Dark Mode and Glassmorphism effects.
+
+Full security audit is bundled into the zip file.
 
 = Security Features =
 
@@ -97,16 +99,80 @@ Yes! Use the Custom CSS field to load and apply any web font you like, or choose
 
 No. This plugin focuses on login URL customization and appearance. Use it alongside proper security measures like strong passwords, two-factor authentication, and security plugins.
 
-== Screenshots ==
-
-1. Login URL settings with custom slug and emergency access key
-2. Appearance settings with background options, form styles, and colors
-3. Dark Mode login page with custom background
-4. Glassmorphism effect with gradient background
-5. Font, animation, and shadow customization options
-6. Custom logo and welcome message example
-
 == Changelog ==
+
+= 1.9.1 =
+* Security: Two-factor secrets now use authenticated encryption (AES-256-GCM) at rest, which also detects tampering. Secrets stored by earlier versions keep working and upgrade to GCM when the user next re-enrols
+* Security: New Application Passwords policy on the Two-Factor tab. By default, Application Passwords are disabled for users who have two-factor enabled, removing any password-only path that would skip the second factor. Switch to "Allow" if those users rely on API or app integrations
+* Security: The pending (pre-activation) two-factor secret is now also encrypted at rest
+* Internal: Tidied a mismatched code comment; no functional change
+
+= 1.9.0 =
+* New: Multisite support. Per-site settings remain independent per site, with a new Network Admin settings screen for network-wide security policy
+* New: Network-wide IP blacklist (applied on every site), force two-factor across all sites, and force login limiting across all sites
+* New: New sites added to a network automatically get the log table and pruning cron set up
+* Internal: Network options flow through the same options wrapper introduced in the 1.2.0 refactor; single-site installs are unaffected
+
+= 1.8.1 =
+* New: QR code on the two-factor setup screen. Generated entirely on your server as an inline SVG (no external services, no third-party QR sites), so the secret never leaves your site. The manual setup key remains as a fallback
+* Improved: The Two-Factor tab now points to Users → Profile with a direct link, and clarifies the administrator reset path
+
+= 1.8.0 =
+* New: Two-factor authentication (TOTP) compatible with Google Authenticator, Authy, 1Password and similar apps. Pure PHP, no external services
+* New: Per-user, opt-in enrolment from the profile screen with single-use recovery codes. Wrong codes count toward the existing lockout
+* New: Lock-out recovery on three levels: recovery codes, an administrator reset on the user's profile, and a wp-config emergency constant (MBR_LOGIN_2FA_DISABLE)
+* Security: TOTP secrets are encrypted at rest with a key derived from the site salts; recovery codes are hashed and single-use
+* New: Two-Factor tab with a master toggle and enrolled-user count
+* Note: QR-code display and forced enrolment by role are planned follow-ups; setup currently uses the manual key / otpauth link, which every authenticator app accepts
+
+= 1.7.0 =
+* New: Time-based access restrictions. A new Schedule tab lets you permit logins only within set hours per day of the week, using your site timezone
+* New: Supports per-day windows, all-day access, and overnight windows (e.g. 22:00 to 06:00). Attempts outside permitted hours are blocked and logged
+* Note: Whitelisted IPs bypass the schedule, and it only affects new logins, not existing sessions
+
+= 1.6.0 =
+* New: Custom login redirect rules. Send users to a chosen destination after login based on their role or a specific username, with user rules taking precedence over role rules
+* New: Optional site-wide default login redirect and a logout redirect
+* New: Redirects tab with an add/remove rule builder. Destinations accept a full URL or a site path such as /dashboard
+
+= 1.5.0 =
+* New: Progressive (escalating) lockouts. Each repeat lockout for the same IP lasts longer (configurable multiplier), up to a maximum, so persistent attackers are shut out for increasingly long periods
+* New: Offence memory. An IP's offence count is remembered for a configurable window and survives the attempt-window reset, then resets after a quiet period
+* Improved: A lockout is now logged the moment an IP crosses the threshold, not only when it retries while locked
+* Improved: The Currently Locked Out table now shows each IP's offence count
+* Note: Deliberately avoids artificial per-request delays, which can tie up server workers under attack; escalation provides the deterrence instead
+
+= 1.4.0 =
+* New: IP blacklist. Listed IP addresses (or CIDR ranges) are blocked from signing in and recorded in the log as a 'blocked' event
+* New: Exclusive access mode, an optional "allow login only from trusted IPs" toggle. It is only enforced while the trusted list is non-empty, so it cannot lock everyone out, and warns if your current IP is not listed
+* Improved: The whitelist is now a true trusted list, bypassing both lockouts and the blacklist, and both lists accept CIDR ranges (IPv4 and IPv6) as well as single addresses
+* Internal: IP access checks moved into a dedicated module on the authenticate chain, with shared IP-matching used by the lockout check
+
+= 1.3.0 =
+* New: Login attempt logging. Failed logins, successful logins and lockout hits are recorded to a dedicated database table, with a new Logs tab showing a filterable, paginated view
+* New: Logging is on by default with a configurable retention period (default 30 days). A daily cleanup prunes old entries, with a hard row cap as a safety net. Includes an enable toggle and a nonce-protected Clear Log action
+* Note: Logged data includes IP addresses. Disable logging or shorten retention on the Logs tab if preferred
+
+= 1.2.3 =
+* Fixed: The admin colour pickers, logo uploader and background-image uploader did not load at all after the 1.2.0 restructure. The admin script was being requested from the includes/ folder (a 404) because its URL was built from the moved file's path; it now uses the plugin-root URL
+
+= 1.2.2 =
+* Fixed: The Gradient Start, Gradient End and Button colour fields now show a working colour picker. They are initialised when their fields become visible, so the gradient pickers no longer render collapsed when revealed
+
+= 1.2.1 =
+* Fixed: Fatal error on the login page (E_ERROR, undefined method sanitize_css) introduced by the 1.2.0 restructure. The login-page output path no longer depends on the admin module
+
+= 1.2.0 =
+* Internal: Restructured the plugin into per-concern modules (URL, appearance, security, admin) under an includes/ directory, with a slim bootstrap loader. Behaviour is unchanged; this is groundwork for upcoming features
+* Internal: Added an options-access wrapper as the single seam for future multisite/network support
+
+= 1.1.2 =
+* Compliance: Prepared for the WordPress.org plugin repository. The plugin folder, main file and text domain are now aligned to the mbr-login-customiser slug. Existing settings are preserved
+* Security: All output is now run through the appropriate escaping functions (esc_html, esc_attr, esc_html_e, esc_html__)
+* Security: Custom CSS is sanitised against a </style> tag breakout before being printed
+* i18n: Added a languages/mbr-login-customiser.pot translation template and translators comments for every string that contains a placeholder
+* Fixed: Replaced parse_url() with wp_parse_url() for consistent results across PHP versions
+* Fixed: The Google Fonts stylesheet is now registered with wp_enqueue_style() instead of being printed as a raw link tag
 
 = 1.1.1 =
 * Security: Hardened brute-force protection against spoofed proxy headers. Behind a proxy/CDN the visitor IP is now read from a single, admin-selected trusted header instead of guessing across several spoofable ones
@@ -157,6 +223,9 @@ No. This plugin focuses on login URL customization and appearance. Use it alongs
 
 == Upgrade Notice ==
 
+= 1.1.2 =
+WordPress.org compliance release: output escaping, internationalisation and coding-standards fixes. Your existing settings are preserved. Recommended for all users.
+
 = 1.1.1 =
 Security hardening release. Strengthens brute-force protection behind proxies/CDNs, makes the emergency-key check constant-time, and tightens input handling. Recommended for all users.
 
@@ -171,15 +240,9 @@ Initial release.
 
 == Additional Info ==
 
-**Created by:** Made by Robert / Little Web Shack
-**Support:** For support and feature requests, please visit https://littlewebshack.com
-
 **Note:** This is a security-focused plugin. Always test thoroughly on a staging site before deploying to production, and always maintain backup access methods.
 
 == Privacy ==
 
 This plugin does not collect, store, or transmit any user data. All settings are stored locally in your WordPress database.
 
-== Credits ==
-
-Developed by Bob from Little Web Shack with a focus on security, usability, and modern design aesthetics.
