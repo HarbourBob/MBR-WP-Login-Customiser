@@ -123,6 +123,11 @@ class MBR_Login_2FA {
             return $user;
         }
 
+        // A trusted device (if that feature is on) skips the second factor.
+        if (apply_filters('mbr_login_trusted_device', false, $user->ID)) {
+            return $user;
+        }
+
         // Non-interactive API auth via a valid Application Password is its own
         // credential; the interactive code cannot be supplied here. In 'block'
         // mode 2FA users have no app passwords, so this never fires for them.

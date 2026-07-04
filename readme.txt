@@ -3,8 +3,8 @@ Contributors: Robert Palmer
 Tags: login, security, customization, branding, custom-login
 Requires at least: 5.0
 Tested up to: 7.00
-Stable tag: 1.9.1
-Requires PHP: 7.0
+Stable tag: 2.0.0
+Requires PHP: 8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -14,10 +14,15 @@ Secure and customize your WordPress login page with custom URLs, stunning visual
 
 MBR Login Customiser is a comprehensive security and customization plugin that allows you to completely transform your WordPress login experience. Hide your login page from automated attacks by using a custom URL, then brand it beautifully with modern design options including Dark Mode and Glassmorphism effects.
 
+Version 2.0 adds passwordless passkey sign-in (WebAuthn / FIDO2), real-time security alerts by email or webhook, and trusted-device support to reduce two-factor friction. As with the rest of the plugin, everything is verified on your own server in PHP - no external services, no telemetry, and no third-party calls.
+
 Full security audit is bundled into the zip file.
 
 = Security Features =
 
+* **Passkeys (WebAuthn / FIDO2)** - Passwordless, phishing-resistant sign-in using device biometrics, screen lock, or a hardware security key. Verified entirely on your own server in PHP - no external services, no third-party calls
+* **Security Alerts** - Get an email or Slack/Discord webhook notification when an IP is locked out, an administrator signs in from a new IP, or failed logins spike. Per-type cooldowns prevent inbox flooding
+* **Trusted Devices** - Let users tick "trust this device" to skip the second factor on browsers they choose, using a signed, revocable cookie. Only the second step is skipped - the password or passkey is always required
 * **Custom Login URL** - Replace /wp-admin and /wp-login.php with your own custom slug
 * **Block Standard Login** - Automatically returns 404 errors for default WordPress login URLs
 * **Emergency Access** - Secure backup URL in case you forget your custom login slug
@@ -77,6 +82,18 @@ Yes, but you may need to exclude your custom login URL from caching. Add your cu
 
 Not currently. Multisite support is planned for a future release.
 
+= Do passkeys send anything to an external service? =
+
+No. The whole WebAuthn ceremony is verified on your own server in PHP - the CBOR is decoded, the public key rebuilt, and the signature checked using PHP's built-in OpenSSL and Sodium. Nothing is sent to any third party, and the private key never leaves the user's device.
+
+= What do I need for passkeys to work? =
+
+An HTTPS site (a browser requirement for WebAuthn) and a reasonably modern browser. Users register a passkey from Users > Profile using their fingerprint, face, screen lock, or a hardware key. Two modes are available: passwordless (a "Sign in with a passkey" button beside the normal form) or second-factor (a passkey is required after the password). Passwordless mode leaves the password login untouched, so it can never lock anyone out.
+
+= I use passkeys and something went wrong. How do I disable them? =
+
+Add `define('MBR_LOGIN_PASSKEYS_DISABLE', true);` to wp-config.php to switch the feature off site-wide. An administrator can also remove any user's passkeys from that user's page under Users.
+
 = What browsers support the Glassmorphism effect? =
 
 The backdrop-filter effect works on all modern browsers: Chrome, Firefox, Safari, and Edge. Older browsers will show the glass panel without the blur effect.
@@ -100,6 +117,15 @@ Yes! Use the Custom CSS field to load and apply any web font you like, or choose
 No. This plugin focuses on login URL customization and appearance. Use it alongside proper security measures like strong passwords, two-factor authentication, and security plugins.
 
 == Changelog ==
+
+= 2.0.0 =
+* New: Passkeys (WebAuthn / FIDO2). Users can register a passkey on their profile and sign in with device biometrics, a screen lock, or a hardware security key. The entire ceremony - CBOR decoding, COSE public-key reconstruction, and signature verification - runs on your server in pure PHP using core OpenSSL and Sodium. No Composer libraries, no external services, no third-party calls. Supports ES256, RS256, and EdDSA (Ed25519) credentials
+* New: Two passkey modes. "Passwordless" adds a Sign in with a passkey button alongside the normal login form and leaves the password path completely untouched, so it cannot lock anyone out. "Second factor" requires a registered passkey after a correct password
+* New: Passkeys tab in settings, and passkey management on the user profile screen (register, name, and remove passkeys). Discoverable-credential (usernameless) sign-in is used, so users are not asked for a username first
+* Security: All standard WebAuthn checks are enforced server-side - challenge match (anti-replay), origin match, relying-party ID hash, user-presence flag, and a monotonic signature counter for cloned-authenticator detection
+* Recovery: Passkeys can be switched off site-wide with define('MBR_LOGIN_PASSKEYS_DISABLE', true) in wp-config.php, and an administrator can remove a user's passkeys from that user's page
+* New: Security Alerts. Sends an email and/or a Slack/Discord webhook when an IP is locked out, an administrator signs in from an IP not seen before, or failed logins exceed a configurable threshold within a time window. Each alert type has a cooldown so an ongoing attack cannot flood you, and a "send test alert" button confirms delivery. Alerts hook the events the login log already emits, so no extra monitoring overhead is added
+* New: Trusted Devices. Users can tick "trust this device" when completing a second factor to skip it on that browser for a configurable number of days (30 by default). Trust is stored as an HMAC-signed cookie plus a server-side record, so devices are revocable from Users > Profile and a stolen cookie still cannot bypass the password or passkey - only the second step is skipped. Works with both TOTP two-factor and passkey second-factor mode
 
 = 1.9.1 =
 * Security: Two-factor secrets now use authenticated encryption (AES-256-GCM) at rest, which also detects tampering. Secrets stored by earlier versions keep working and upgrade to GCM when the user next re-enrols

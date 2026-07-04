@@ -223,6 +223,36 @@ class MBR_Login_Admin {
         register_setting('mbr_custom_login_2fa', 'mbr_custom_login_2fa_app_passwords', array(
             'sanitize_callback' => array($this, 'sanitize_app_passwords_policy')
         ));
+
+        // Passkey (WebAuthn) settings.
+        register_setting('mbr_custom_login_passkeys', 'mbr_custom_login_passkeys_enabled', array(
+            'sanitize_callback' => array($this, 'sanitize_checkbox')
+        ));
+        register_setting('mbr_custom_login_passkeys', 'mbr_custom_login_passkeys_mode', array(
+            'sanitize_callback' => array($this, 'sanitize_passkeys_mode')
+        ));
+
+        // Security alert settings.
+        register_setting('mbr_custom_login_alerts', 'mbr_custom_login_alerts_enabled', array('sanitize_callback' => array($this, 'sanitize_checkbox')));
+        register_setting('mbr_custom_login_alerts', 'mbr_custom_login_alerts_email', array('sanitize_callback' => 'sanitize_email'));
+        register_setting('mbr_custom_login_alerts', 'mbr_custom_login_alerts_webhook', array('sanitize_callback' => 'esc_url_raw'));
+        register_setting('mbr_custom_login_alerts', 'mbr_custom_login_alerts_on_lockout', array('sanitize_callback' => array($this, 'sanitize_checkbox')));
+        register_setting('mbr_custom_login_alerts', 'mbr_custom_login_alerts_on_admin_ip', array('sanitize_callback' => array($this, 'sanitize_checkbox')));
+        register_setting('mbr_custom_login_alerts', 'mbr_custom_login_alerts_on_spike', array('sanitize_callback' => array($this, 'sanitize_checkbox')));
+        register_setting('mbr_custom_login_alerts', 'mbr_custom_login_alerts_spike_threshold', array('sanitize_callback' => 'absint'));
+        register_setting('mbr_custom_login_alerts', 'mbr_custom_login_alerts_spike_window', array('sanitize_callback' => 'absint'));
+        register_setting('mbr_custom_login_alerts', 'mbr_custom_login_alerts_cooldown', array('sanitize_callback' => 'absint'));
+
+        // Trusted device settings.
+        register_setting('mbr_custom_login_trusted', 'mbr_custom_login_trusted_enabled', array('sanitize_callback' => array($this, 'sanitize_checkbox')));
+        register_setting('mbr_custom_login_trusted', 'mbr_custom_login_trusted_days', array('sanitize_callback' => 'absint'));
+    }
+
+    /**
+     * Sanitize the passkeys mode to a known value.
+     */
+    public function sanitize_passkeys_mode($value) {
+        return in_array($value, array('passwordless', '2fa'), true) ? $value : 'passwordless';
     }
 
     /**
@@ -524,6 +554,15 @@ class MBR_Login_Admin {
                 </a>
                 <a href="?page=mbr-custom-login&tab=2fa" class="nav-tab <?php echo $active_tab === '2fa' ? 'nav-tab-active' : ''; ?>">
                     <?php esc_html_e('Two-Factor', 'mbr-login-customiser'); ?>
+                </a>
+                <a href="?page=mbr-custom-login&tab=passkeys" class="nav-tab <?php echo $active_tab === 'passkeys' ? 'nav-tab-active' : ''; ?>">
+                    <?php esc_html_e('Passkeys', 'mbr-login-customiser'); ?>
+                </a>
+                <a href="?page=mbr-custom-login&tab=alerts" class="nav-tab <?php echo $active_tab === 'alerts' ? 'nav-tab-active' : ''; ?>">
+                    <?php esc_html_e('Alerts', 'mbr-login-customiser'); ?>
+                </a>
+                <a href="?page=mbr-custom-login&tab=trusted" class="nav-tab <?php echo $active_tab === 'trusted' ? 'nav-tab-active' : ''; ?>">
+                    <?php esc_html_e('Trusted Devices', 'mbr-login-customiser'); ?>
                 </a>
             </h2>
             
@@ -1245,6 +1284,33 @@ class MBR_Login_Admin {
             <?php elseif ($active_tab === '2fa'): ?>
 
                 <?php $this->render_2fa_tab(); ?>
+
+            <?php elseif ($active_tab === 'passkeys'): ?>
+
+                <?php
+                $pk = MBR_Custom_Login::get_instance()->passkeys();
+                if ($pk) {
+                    $pk->render_settings_tab();
+                }
+                ?>
+
+            <?php elseif ($active_tab === 'alerts'): ?>
+
+                <?php
+                $al = MBR_Custom_Login::get_instance()->alerts();
+                if ($al) {
+                    $al->render_settings_tab();
+                }
+                ?>
+
+            <?php elseif ($active_tab === 'trusted'): ?>
+
+                <?php
+                $td = MBR_Custom_Login::get_instance()->trusted();
+                if ($td) {
+                    $td->render_settings_tab();
+                }
+                ?>
 
             <?php endif; ?>
         </div>

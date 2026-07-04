@@ -1,138 +1,229 @@
-# MBR Custom Login - WordPress Plugin
+<div align="center">
 
-A security-focused WordPress plugin that allows you to customize your login URL and appearance, protecting your site from automated attacks on standard login pages.
+# 🔐 MBR Login Customiser
 
-## Features
+### Lock down and smarten up the part of your WordPress site attackers hit first — the login page.
 
-### Security Features
-- **Custom Login URL**: Replace `/wp-admin` and `/wp-login.php` with your own custom slug
-- **Block Standard Login**: Automatically blocks access to default WordPress login URLs
-- **Emergency Access**: Secure backup URL in case you forget your custom login slug
-- **404 Responses**: Returns proper 404 errors for blocked login attempts
+Passkeys · Two-Factor · Security Alerts · Trusted Devices · Custom Login URL · Brute-Force Protection
 
-### Appearance Customization
-- **Custom Logo**: Upload your own logo for the login page
-- **Logo Link**: Set where the logo links to (defaults to homepage)
-- **Welcome Message**: Display a custom message above the login form
-- **Color Customization**: Change background and button colors
-- **Custom CSS**: Add your own CSS for advanced customization
+<br>
 
-## Installation
+![Version](https://img.shields.io/badge/version-2.0.0-2b6cb0)
+![License](https://img.shields.io/badge/license-GPL--2.0%2B-2f855a)
+![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-21759b)
+![PHP](https://img.shields.io/badge/PHP-8.0%2B-777bb4)
+![No telemetry](https://img.shields.io/badge/telemetry-none-1a1a1a)
+![Price](https://img.shields.io/badge/price-free%20forever-6b46c1)
 
-1. Upload the `mbr-custom-login.php` file to your `/wp-content/plugins/` directory
-2. Activate the plugin through the 'Plugins' menu in WordPress
-3. Go to **Settings > Custom Login** to configure the plugin
+</div>
 
-## Configuration
+---
 
-### Login URL Settings
+## Why it exists
 
-Navigate to **Settings > Custom Login > Login URL** tab:
+Nine out of ten attacks on a WordPress site start at the same door: `/wp-login.php`. Bots find it, hammer it, and never get tired. **MBR Login Customiser** moves that door, bolts it, watches it, and — when you're ready — replaces the key with a passkey.
 
-1. **Custom Login Slug**: Enter your desired login URL slug (e.g., "secure-entry")
-   - Your new login URL will be: `yoursite.com/your-slug`
-   - Avoid using reserved words like: wp-admin, admin, login, wp-login
+It's a full login-security suite that also happens to make your login page look great. And it does the whole job on **your own server**:
 
-2. **Emergency Access Key**: A randomly generated key for backup access
-   - Save this key somewhere safe!
-   - Emergency URL format: `yoursite.com?mbr_emergency=YOUR_KEY`
-   - Use the "Generate New Key" button to create a new one if needed
+- 🆓 **Free forever.** No premium tier, no locked features, no "upgrade to unlock."
+- 🕵️ **No telemetry.** Nothing about your site or your users is phoned home. Ever.
+- 🌐 **No external services, no CDN.** Passkey verification, 2FA QR codes, the lot — all generated and checked in pure PHP, on your box.
+- 📖 **GPL and open.** Read every line. Fork it. Ship it.
 
-### Appearance Settings
+Built and maintained by one person who thinks good security shouldn't be a paywall.
 
-Navigate to **Settings > Custom Login > Appearance** tab:
+---
 
-1. **Custom Logo URL**: Full URL to your logo image
-   - Recommended size: 320x80 pixels
-   - Supports: JPG, PNG, SVG
+## ✨ What's new in 2.0
 
-2. **Logo Link URL**: Where the logo should link (default: homepage)
+Three headline features, all verified entirely on your own server — no third-party calls.
 
-3. **Logo Title Text**: Hover text for the logo
+### 🔑 Passkeys (WebAuthn / FIDO2)
+Passwordless, phishing-resistant sign-in using a fingerprint, face, screen lock, or a hardware security key. The genuinely hard part — decoding the authenticator's response and verifying its signature — is done in **pure PHP** using the platform's own OpenSSL and libsodium. No Composer libraries, no external validation services, and the private key never leaves the user's device. Supports ES256, RS256 and EdDSA credentials, in either **passwordless** or **second-factor** mode.
 
-4. **Welcome Message**: Optional message displayed above login form
-   - Supports basic HTML formatting
+### 🚨 Security Alerts
+Your login log stops being something you have to remember to check. Get an **email** or a **Slack / Discord webhook** the moment an IP is locked out, an administrator signs in from an IP not seen before, or failed logins spike past a threshold you set. Per-alert cooldowns mean an ongoing attack can't flood your inbox, and there's a one-click "send test alert" button.
 
-5. **Background Color**: Page background color (hex color picker)
+### 📱 Trusted Devices
+Let people tick *"trust this device"* to skip the second factor on browsers they choose — the friction-killer that stops users disabling 2FA altogether. Backed by an **HMAC-signed, server-side revocable cookie** with a hard expiry, so trust is time-limited and can be pulled from a user's profile at any time. Only the second step is skipped — the password or passkey is **always** required.
 
-6. **Button Color**: Login button color (hex color picker)
+---
 
-7. **Custom CSS**: Advanced CSS customization
-   - Target `.login` class elements
-   - No `<style>` tags needed - just pure CSS
+## 🧰 The full toolkit
 
-## Security Considerations
+<table>
+<tr>
+<td width="50%" valign="top">
 
-### Best Practices
-1. **Choose a unique slug**: Don't use obvious names like "login2" or "admin-panel"
-2. **Keep your emergency key safe**: Store it in a password manager
-3. **Test before deployment**: Make sure you can access the new URL before leaving the settings page
-4. **Use HTTPS**: This plugin works best on SSL-enabled sites
+### 🚪 Access & obfuscation
+- **Custom login URL** — replace `/wp-admin` & `/wp-login.php` with your own slug
+- **Block standard login** — proper 404s for the default URLs
+- **Emergency access** — signed backup URL + a `wp-config` kill switch
+- **IP allow / block lists** — with full **CIDR** support (IPv4 & IPv6)
+- **Time-based access** — only allow logins during set hours, overnight windows included
 
-### What This Plugin Does NOT Do
-- Does NOT protect against determined attackers who already know your login URL
-- Does NOT replace proper security measures (strong passwords, 2FA, etc.)
-- Does NOT block access to REST API endpoints or XML-RPC
+</td>
+<td width="50%" valign="top">
 
-### Compatibility
-- **WordPress Version**: 5.0 or higher
-- **PHP Version**: 7.0 or higher
-- **Multisite**: Not currently supported (planned for future version)
+### 🛡️ Attack protection
+- **Brute-force protection** — rate limiting with escalating lockouts
+- **Offence memory** — persistent attackers get progressively longer bans
+- **Login logging** — filterable log with automatic retention
+- **Post-login/logout redirects** — by role or individual user
+- **Multisite ready** — network-wide security policy from Network Admin
 
-## How It Works
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
 
-### URL Blocking
-1. Plugin intercepts all requests to standard WordPress login URLs
-2. If user is not authenticated and doesn't have valid session token, shows 404
-3. Custom login slug is recognized and processed normally
-4. Emergency key provides backup access method
+### 🔐 Strong authentication
+- **Passkeys (WebAuthn / FIDO2)** — passwordless & phishing-resistant
+- **Two-factor (TOTP)** — works with Google Authenticator, Authy, 1Password
+- **Pure-PHP QR enrolment** — the enrolment QR is drawn on your server
+- **AES-256-GCM** encryption of 2FA secrets at rest
+- **Recovery codes** + admin & `wp-config` recovery paths
 
-### Session Management
-- When accessing custom login URL, plugin sets a temporary token (5 minutes)
-- Token allows actual wp-login.php to load without triggering 404
-- Token is cleared after use or expiration
+</td>
+<td width="50%" valign="top">
 
-## Troubleshooting
+### 🎨 Make it yours
+- **Dark mode & glassmorphism** form styles out of the box
+- **Custom logo**, link, welcome message & footer
+- **Fonts, animations, shadows** and button colours
+- **Full custom CSS** for anything else
+- Looks like *your* brand, not a stock WordPress form
 
-### "I can't access my login page!"
-Use your emergency access URL:
+</td>
+</tr>
+</table>
+
+---
+
+## 🚀 Quick start
+
+1. **Download** the latest release (see [Releases](../../releases), or grab it from [littlewebshack.com](https://littlewebshack.com)).
+2. In your dashboard go to **Plugins → Add New → Upload Plugin**, choose the `.zip`, and **Activate**. *(Or drop the `mbr-login-customiser` folder into `/wp-content/plugins/`.)*
+3. Open the **MBR Login Customiser** settings and work through the tabs — each feature is off until you switch it on.
+4. **Set your custom login URL first and test it in a private window before logging out.** (There's an emergency URL and a kill switch if you ever lock yourself out — see below.)
+
+> 💡 **Tip:** turn features on one at a time. Set your custom URL, confirm you can still get in, then layer on 2FA, passkeys, alerts and trusted devices as you go.
+
+---
+
+## ⚙️ A quick tour of the tabs
+
+| Tab | What it does |
+|-----|--------------|
+| **Login URL** | Your custom slug, standard-login blocking, emergency access key |
+| **Appearance** | Logo, colours, dark mode, glassmorphism, fonts, custom CSS |
+| **Security** | Rate limiting, escalating lockouts, IP blacklist |
+| **Access** | IP allow/block (CIDR) and time-based access windows |
+| **Logs** | Login event history with retention control |
+| **Redirects** | Where users land after login / logout, by role or user |
+| **Schedule** | Permitted login hours in your site's timezone |
+| **Two-Factor** | TOTP enrolment, recovery codes, app-password policy |
+| **Passkeys** | Enable WebAuthn, choose passwordless or second-factor mode |
+| **Alerts** | Email / webhook notifications and thresholds |
+| **Trusted Devices** | Enable "remember this device" and set the trust duration |
+
+Passkeys and trusted devices are managed per user on their own **Users → Profile** screen.
+
+---
+
+## 🆘 Locked out? Don't panic.
+
+There's always a way back in.
+
+**Emergency URL** — the backup access link (find it on the Login URL tab and keep it safe):
 ```
-yoursite.com/?mbr_emergency=YOUR_EMERGENCY_KEY
+https://yoursite.com/?mbr_emergency=YOUR_EMERGENCY_KEY
 ```
 
-### "I forgot my emergency key!"
-If you have FTP/SSH access:
-1. Connect to your server
-2. Edit `wp-config.php`
-3. Add: `define('MBR_EMERGENCY_DISABLE', true);`
-4. This temporarily disables the plugin protection
-5. Log in normally at `yoursite.com/wp-admin`
-6. Go to Settings > Custom Login to get your key
-7. Remove the line from `wp-config.php`
+**Kill switches** — if you have FTP/SSH, add one of these to `wp-config.php`, log in normally, then remove it:
+```php
+define('MBR_EMERGENCY_DISABLE', true);       // disables login-URL protection
+define('MBR_LOGIN_PASSKEYS_DISABLE', true);  // disables passkeys site-wide
+```
 
-### "Getting redirected to 404 after login"
-Clear your browser cookies and cache, then try again.
+Recovery codes and administrator overrides are also available for two-factor and passkeys, so a lost phone never means a locked account.
 
-### "Plugin conflicts with my caching plugin"
-You may need to exclude your custom login URL from caching:
-- WP Super Cache: Add to "Rejected URLs"
-- W3 Total Cache: Add to "Never cache the following pages"
-- WP Rocket: Add to "Never Cache URL(s)"
+---
 
-## Customization Examples
+## 🔒 Security philosophy
 
-### Custom CSS Example 1: Modern Flat Design
+- **Everything happens on your server.** No request about your site or your users is ever sent to a third party. Passkey ceremonies, TOTP verification and QR generation are all local, in pure PHP.
+- **Additive by default.** Passwordless passkey sign-in sits *alongside* the normal login — it can never lock a legitimate user out.
+- **Least surprise.** Every feature ships off, and every risky action has a documented recovery path.
+- **Independently audited surface.** A security-audit report covering the codebase is bundled with the plugin.
+
+### What it does **not** claim to be
+- It isn't an edge firewall or a CDN — pair it with your host's WAF or Cloudflare for network-level filtering.
+- It doesn't replace good hygiene — strong passwords and keeping WordPress updated still matter.
+
+---
+
+## 📦 Requirements
+
+| | |
+|---|---|
+| **WordPress** | 6.0 or higher |
+| **PHP** | 8.0 or higher (8.3 recommended) |
+| **Extensions** | OpenSSL & libsodium (standard on modern PHP) — needed for passkeys |
+| **HTTPS** | Required for passkeys (a browser rule), recommended everywhere |
+| **Multisite** | ✅ Supported |
+
+---
+
+## 🔄 Updates
+
+Updates are **self-hosted** and delivered straight to your dashboard via the [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker) — no marketplace account, no telemetry. When a new version is published you'll see the usual update prompt under Plugins, just like any other.
+
+---
+
+## 🗺️ Roadmap
+
+Much of the original roadmap is now shipped ✅ — multisite, logging, IP lists, time-based access, 2FA, redirects and brute-force protection all landed. On the horizon:
+
+- [ ] **Login firewall / request hardening** — a focused, monitor-mode-first ruleset for the login, XML-RPC and REST auth surfaces (reusing the existing IP, rate-limit and logging engine)
+- [ ] More authenticator/attestation options for passkeys
+- [ ] Additional alert channels
+
+Got a feature request? [Open an issue](../../issues) — this plugin is shaped by the people using it.
+
+---
+
+<details>
+<summary>📜 <strong>Version history</strong> (click to expand)</summary>
+
+### 2.0.0
+- **New:** Passkeys (WebAuthn / FIDO2) — passwordless, phishing-resistant sign-in, verified in pure PHP (CBOR decode, COSE key reconstruction, signature checks) with no external services. Passwordless and second-factor modes; ES256, RS256 and EdDSA support.
+- **New:** Security Alerts — email and Slack/Discord webhook notifications on lockouts, new-IP admin sign-in and failed-login spikes, with per-type cooldowns and a test button.
+- **New:** Trusted Devices — skip the second factor on trusted browsers via an HMAC-signed, revocable, time-limited cookie.
+
+### 1.9.x
+- Two-factor authentication (TOTP) with pure-PHP QR enrolment, AES-256-GCM secret encryption, recovery codes and a formal security audit.
+- Multisite support with network-wide policy.
+
+### 1.x
+- Custom login URL, emergency access, appearance customisation, colour pickers and custom CSS.
+- Login logging, IP allow/block with CIDR, time-based access, redirect rules and brute-force protection.
+
+*Full, detailed changelog lives in `readme.txt`.*
+
+</details>
+
+<details>
+<summary>🎨 <strong>Custom CSS examples</strong> (click to expand)</summary>
+
+**Modern flat design**
 ```css
-#login {
-    padding: 5% 0 0;
-}
-
+#login { padding: 5% 0 0; }
 .login form {
     border: none;
     box-shadow: 0 10px 40px rgba(0,0,0,0.1);
     border-radius: 10px;
 }
-
 .login input[type="text"],
 .login input[type="password"] {
     border-radius: 5px;
@@ -141,67 +232,51 @@ You may need to exclude your custom login URL from caching:
 }
 ```
 
-### Custom CSS Example 2: Dark Theme
+**Dark theme** *(or just flip on the built-in Dark Mode style)*
 ```css
-body.login {
-    background: #1a1a1a;
-}
-
-.login form {
-    background: #2a2a2a;
-    border: 1px solid #3a3a3a;
-}
-
-.login label {
-    color: #ffffff;
-}
-
+body.login { background: #1a1a1a; }
+.login form { background: #2a2a2a; border: 1px solid #3a3a3a; }
+.login label { color: #fff; }
 .login input[type="text"],
 .login input[type="password"] {
-    background: #3a3a3a;
-    border: 1px solid #4a4a4a;
-    color: #ffffff;
+    background: #3a3a3a; border: 1px solid #4a4a4a; color: #fff;
 }
-
-.login #backtoblog a,
-.login #nav a {
-    color: #ffffff !important;
-}
+.login #backtoblog a, .login #nav a { color: #fff !important; }
 ```
 
-## Changelog
+</details>
 
-### Version 1.1.1
-- Security: trusted-proxy-header selection for accurate, non-spoofable IP detection behind a CDN
-- Security: constant-time emergency-key comparison
-- Security: gradient direction restricted to an allowlist
-- Security: SameSite=Lax on the login pass-through cookie
-- Hardening: bounded failed-attempt storage and unslashed request input
+<details>
+<summary>🧩 <strong>Playing nicely with caching</strong> (click to expand)</summary>
 
-### Version 1.0.0
-- Initial release
-- Custom login URL functionality
-- Emergency access system
-- Login page appearance customization
-- Color picker integration
-- Custom CSS support
+If a caching plugin interferes with your custom login URL, exclude it from caching:
 
-## Roadmap
+- **WP Rocket** → *Never Cache URL(s)*
+- **W3 Total Cache** → *Never cache the following pages*
+- **WP Super Cache** → *Rejected URLs*
 
-Future features being considered:
-- [ ] Multisite support
-- [ ] Login attempt logging
-- [ ] IP whitelist/blacklist
-- [ ] Time-based access restrictions
-- [ ] Two-factor authentication integration
-- [ ] Custom login redirect rules
-- [ ] Brute force protection
+On SiteGround, also exclude it from SG Optimizer's dynamic cache if needed.
 
-## License
-
-This plugin is licensed under GPL v2 or later.
-
+</details>
 
 ---
 
-**Note**: This is a security plugin. Always test thoroughly on a staging site before deploying to production, and always maintain backup access methods.
+## 🤝 Contributing
+
+Issues, ideas and pull requests are all welcome. If you've found a security concern, please report it responsibly rather than opening a public issue.
+
+## 📄 License
+
+Released under the **GPL v2 or later**. Use it, study it, change it, share it.
+
+## 👋 Author
+
+Built with care by **Robert Palmer** — a solo freelance WordPress developer in Cleethorpes, UK, giving away a suite of genuinely-free, no-nonsense plugins.
+
+- 🌐 [littlewebshack.com](https://littlewebshack.com) · [madebyrobert.co.uk](https://madebyrobert.co.uk)
+- 🐙 GitHub: [@HarbourBob](https://github.com/HarbourBob)
+
+<div align="center">
+<br>
+<em>If MBR Login Customiser keeps the bots off your door, a ⭐ on the repo is always appreciated.</em>
+</div>

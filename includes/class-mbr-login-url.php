@@ -40,7 +40,7 @@ class MBR_Login_Url {
         $raw_uri     = isset($_SERVER['REQUEST_URI']) ? wp_unslash($_SERVER['REQUEST_URI']) : '';
         $request_uri = wp_parse_url($raw_uri, PHP_URL_PATH);
         $request_uri = rtrim((string) $request_uri, '/');
-        $home_path = trim(wp_parse_url(home_url(), PHP_URL_PATH), '/');
+        $home_path = trim((string) wp_parse_url(home_url(), PHP_URL_PATH), '/');
         
         // Remove home path from request URI
         if ($home_path && strpos($request_uri, $home_path) === 0) {

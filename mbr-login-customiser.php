@@ -3,7 +3,7 @@
  * Plugin Name: MBR Login Customiser
  * Plugin URI: https://littlewebshack.com/mbr-login-customiser/
  * Description: Secure your WordPress login by customizing the login URL and appearance with modern design options including Dark Mode and Glassmorphism effects
- * Version: 1.9.1
+ * Version: 2.0.0
  * Author:  Robert Palmer
  * Author URI: https://littlewebshack.com
  * License: GPL v2 or later
@@ -45,7 +45,7 @@ mbr_register_updates( array(
     'slug'   => 'mbr-login-customiser',
 ) );
 
-define('MBR_CUSTOM_LOGIN_VERSION', '1.9.1');
+define('MBR_CUSTOM_LOGIN_VERSION', '2.0.0');
 define('MBR_CUSTOM_LOGIN_PLUGIN_FILE', __FILE__);
 define('MBR_CUSTOM_LOGIN_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('MBR_CUSTOM_LOGIN_PLUGIN_URL', plugin_dir_url(__FILE__));
@@ -61,6 +61,9 @@ require_once MBR_CUSTOM_LOGIN_PLUGIN_DIR . 'includes/class-mbr-login-access.php'
 require_once MBR_CUSTOM_LOGIN_PLUGIN_DIR . 'includes/class-mbr-login-redirect.php';
 require_once MBR_CUSTOM_LOGIN_PLUGIN_DIR . 'includes/class-mbr-login-qr.php';
 require_once MBR_CUSTOM_LOGIN_PLUGIN_DIR . 'includes/class-mbr-login-2fa.php';
+require_once MBR_CUSTOM_LOGIN_PLUGIN_DIR . 'includes/class-mbr-login-passkeys.php';
+require_once MBR_CUSTOM_LOGIN_PLUGIN_DIR . 'includes/class-mbr-login-alerts.php';
+require_once MBR_CUSTOM_LOGIN_PLUGIN_DIR . 'includes/class-mbr-login-trusted-devices.php';
 require_once MBR_CUSTOM_LOGIN_PLUGIN_DIR . 'includes/class-mbr-login-network.php';
 require_once MBR_CUSTOM_LOGIN_PLUGIN_DIR . 'includes/class-mbr-login-log.php';
 require_once MBR_CUSTOM_LOGIN_PLUGIN_DIR . 'includes/class-mbr-login-admin.php';
@@ -111,6 +114,25 @@ register_activation_hook(__FILE__, function() {
     add_option('mbr_custom_login_time_enabled', 0);
     add_option('mbr_custom_login_2fa_enabled', 0);
     add_option('mbr_custom_login_2fa_app_passwords', 'block');
+
+    // Passkey (WebAuthn) defaults (off; passwordless button mode until changed).
+    add_option('mbr_custom_login_passkeys_enabled', 0);
+    add_option('mbr_custom_login_passkeys_mode', 'passwordless');
+
+    // Security alert defaults (off until configured).
+    add_option('mbr_custom_login_alerts_enabled', 0);
+    add_option('mbr_custom_login_alerts_email', '');
+    add_option('mbr_custom_login_alerts_webhook', '');
+    add_option('mbr_custom_login_alerts_on_lockout', 1);
+    add_option('mbr_custom_login_alerts_on_admin_ip', 1);
+    add_option('mbr_custom_login_alerts_on_spike', 1);
+    add_option('mbr_custom_login_alerts_spike_threshold', 20);
+    add_option('mbr_custom_login_alerts_spike_window', 10);
+    add_option('mbr_custom_login_alerts_cooldown', 15);
+
+    // Trusted device defaults (off; 30-day trust when enabled).
+    add_option('mbr_custom_login_trusted_enabled', 0);
+    add_option('mbr_custom_login_trusted_days', 30);
     add_option('mbr_custom_login_time_rules', array(
         0 => array('enabled' => 1, 'start' => '', 'end' => ''),
         1 => array('enabled' => 1, 'start' => '', 'end' => ''),

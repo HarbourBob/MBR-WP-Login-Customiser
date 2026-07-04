@@ -24,6 +24,9 @@ class MBR_Custom_Login {
     private $access;
     private $redirect;
     private $twofa;
+    private $passkeys;
+    private $alerts;
+    private $trusted;
     private $network;
     private $log;
     private $admin;
@@ -48,6 +51,9 @@ class MBR_Custom_Login {
         $this->access     = new MBR_Login_Access();
         $this->redirect   = new MBR_Login_Redirect();
         $this->twofa      = new MBR_Login_2FA();
+        $this->passkeys   = new MBR_Login_Passkeys();
+        $this->alerts     = new MBR_Login_Alerts();
+        $this->trusted    = new MBR_Login_Trusted_Devices();
         $this->network    = new MBR_Login_Network();
         $this->log        = new MBR_Login_Log();
         $this->url        = new MBR_Login_Url();
@@ -58,6 +64,9 @@ class MBR_Custom_Login {
         $this->access->register_hooks();
         $this->redirect->register_hooks();
         $this->twofa->register_hooks();
+        $this->passkeys->register_hooks();
+        $this->alerts->register_hooks();
+        $this->trusted->register_hooks();
         $this->network->register_hooks();
         $this->log->register_hooks();
         $this->url->register_hooks();
@@ -105,6 +114,27 @@ class MBR_Custom_Login {
      */
     public function twofa() {
         return $this->twofa;
+    }
+
+    /**
+     * Accessor for the passkeys module.
+     */
+    public function passkeys() {
+        return $this->passkeys;
+    }
+
+    /**
+     * Accessor for the alerts module.
+     */
+    public function alerts() {
+        return $this->alerts;
+    }
+
+    /**
+     * Accessor for the trusted-devices module.
+     */
+    public function trusted() {
+        return $this->trusted;
     }
 
     /**
