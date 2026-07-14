@@ -3,9 +3,9 @@
  * Plugin Name: MBR Login Customiser
  * Plugin URI: https://littlewebshack.com/mbr-login-customiser/
  * Description: Secure your WordPress login by customizing the login URL and appearance with modern design options including Dark Mode and Glassmorphism effects
- * Version: 2.0.0
+ * Version: 2.1.0
  * Author:  Robert Palmer
- * Author URI: https://littlewebshack.com
+ * Author URI: https://madebyrobert.co.uk/
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: mbr-login-customiser
@@ -40,12 +40,12 @@ require_once __DIR__ . '/mbr-updater.php';
 
 mbr_register_updates( array(
     'source' => 'json',
-    'url'    => 'https://littlewebshack.com/updates/mbr-login-customiser.json',
+    'url'    => 'https://raw.githubusercontent.com/HarbourBob/mbr-updates/main/mbr-login-customiser.json',
     'file'   => __FILE__,
     'slug'   => 'mbr-login-customiser',
 ) );
 
-define('MBR_CUSTOM_LOGIN_VERSION', '2.0.0');
+define('MBR_CUSTOM_LOGIN_VERSION', '2.1.0');
 define('MBR_CUSTOM_LOGIN_PLUGIN_FILE', __FILE__);
 define('MBR_CUSTOM_LOGIN_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('MBR_CUSTOM_LOGIN_PLUGIN_URL', plugin_dir_url(__FILE__));
@@ -58,6 +58,7 @@ require_once MBR_CUSTOM_LOGIN_PLUGIN_DIR . 'includes/class-mbr-login-url.php';
 require_once MBR_CUSTOM_LOGIN_PLUGIN_DIR . 'includes/class-mbr-login-appearance.php';
 require_once MBR_CUSTOM_LOGIN_PLUGIN_DIR . 'includes/class-mbr-login-security.php';
 require_once MBR_CUSTOM_LOGIN_PLUGIN_DIR . 'includes/class-mbr-login-access.php';
+require_once MBR_CUSTOM_LOGIN_PLUGIN_DIR . 'includes/class-mbr-login-firewall.php';
 require_once MBR_CUSTOM_LOGIN_PLUGIN_DIR . 'includes/class-mbr-login-redirect.php';
 require_once MBR_CUSTOM_LOGIN_PLUGIN_DIR . 'includes/class-mbr-login-qr.php';
 require_once MBR_CUSTOM_LOGIN_PLUGIN_DIR . 'includes/class-mbr-login-2fa.php';
@@ -129,6 +130,18 @@ register_activation_hook(__FILE__, function() {
     add_option('mbr_custom_login_alerts_spike_threshold', 20);
     add_option('mbr_custom_login_alerts_spike_window', 10);
     add_option('mbr_custom_login_alerts_cooldown', 15);
+
+    // Firewall defaults (off; all layers on with generous limits when enabled).
+    add_option('mbr_custom_login_firewall_enabled', 0);
+    add_option('mbr_custom_login_firewall_gate', 1);
+    add_option('mbr_custom_login_firewall_bad_agents', 1);
+    add_option('mbr_custom_login_firewall_rate_enabled', 1);
+    add_option('mbr_custom_login_firewall_rate_max', 20);
+    add_option('mbr_custom_login_firewall_rate_window', 60);
+    add_option('mbr_custom_login_firewall_rate_block', 10);
+    add_option('mbr_custom_login_firewall_honeypot', 1);
+    add_option('mbr_custom_login_firewall_min_time', 2);
+    add_option('mbr_custom_login_firewall_block_xmlrpc', 0);
 
     // Trusted device defaults (off; 30-day trust when enabled).
     add_option('mbr_custom_login_trusted_enabled', 0);

@@ -42,6 +42,7 @@ class MBR_Login_Log {
         add_action('wp_login', array($this, 'log_success'), 20, 2);
         add_action('mbr_login_customiser_lockout', array($this, 'log_lockout'), 10, 2);
         add_action('mbr_login_customiser_blocked', array($this, 'log_blocked'), 10, 2);
+        add_action('mbr_login_customiser_firewall', array($this, 'log_firewall'), 10, 2);
         add_action('admin_init', array($this, 'maybe_upgrade'));
         add_action(self::PRUNE_HOOK, array($this, 'prune'));
     }
@@ -156,6 +157,13 @@ class MBR_Login_Log {
      */
     public function log_blocked($ip, $username) {
         $this->record('blocked', $ip, $username);
+    }
+
+    /**
+     * mbr_login_customiser_firewall handler.
+     */
+    public function log_firewall($ip, $username) {
+        $this->record('firewall', $ip, $username);
     }
 
     /**

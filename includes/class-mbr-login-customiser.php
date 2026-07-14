@@ -21,6 +21,7 @@ class MBR_Custom_Login {
     private $url;
     private $appearance;
     private $security;
+    private $firewall;
     private $access;
     private $redirect;
     private $twofa;
@@ -48,6 +49,7 @@ class MBR_Custom_Login {
         add_action('plugins_loaded', array($this, 'init'));
 
         $this->security   = new MBR_Login_Security();
+        $this->firewall   = new MBR_Login_Firewall();
         $this->access     = new MBR_Login_Access();
         $this->redirect   = new MBR_Login_Redirect();
         $this->twofa      = new MBR_Login_2FA();
@@ -61,6 +63,7 @@ class MBR_Custom_Login {
         $this->admin      = new MBR_Login_Admin($this->security, $this->log, $this->twofa);
 
         $this->security->register_hooks();
+        $this->firewall->register_hooks();
         $this->access->register_hooks();
         $this->redirect->register_hooks();
         $this->twofa->register_hooks();
@@ -93,6 +96,13 @@ class MBR_Custom_Login {
      */
     public function log() {
         return $this->log;
+    }
+
+    /**
+     * Accessor for the firewall module.
+     */
+    public function firewall() {
+        return $this->firewall;
     }
 
     /**

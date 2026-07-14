@@ -232,6 +232,18 @@ class MBR_Login_Admin {
             'sanitize_callback' => array($this, 'sanitize_passkeys_mode')
         ));
 
+        // Firewall settings.
+        register_setting('mbr_custom_login_firewall', 'mbr_custom_login_firewall_enabled', array('sanitize_callback' => array($this, 'sanitize_checkbox')));
+        register_setting('mbr_custom_login_firewall', 'mbr_custom_login_firewall_gate', array('sanitize_callback' => array($this, 'sanitize_checkbox')));
+        register_setting('mbr_custom_login_firewall', 'mbr_custom_login_firewall_bad_agents', array('sanitize_callback' => array($this, 'sanitize_checkbox')));
+        register_setting('mbr_custom_login_firewall', 'mbr_custom_login_firewall_rate_enabled', array('sanitize_callback' => array($this, 'sanitize_checkbox')));
+        register_setting('mbr_custom_login_firewall', 'mbr_custom_login_firewall_rate_max', array('sanitize_callback' => array($this, 'sanitize_firewall_rate_max')));
+        register_setting('mbr_custom_login_firewall', 'mbr_custom_login_firewall_rate_window', array('sanitize_callback' => array($this, 'sanitize_firewall_rate_window')));
+        register_setting('mbr_custom_login_firewall', 'mbr_custom_login_firewall_rate_block', array('sanitize_callback' => array($this, 'sanitize_firewall_rate_block')));
+        register_setting('mbr_custom_login_firewall', 'mbr_custom_login_firewall_honeypot', array('sanitize_callback' => array($this, 'sanitize_checkbox')));
+        register_setting('mbr_custom_login_firewall', 'mbr_custom_login_firewall_min_time', array('sanitize_callback' => array($this, 'sanitize_firewall_min_time')));
+        register_setting('mbr_custom_login_firewall', 'mbr_custom_login_firewall_block_xmlrpc', array('sanitize_callback' => array($this, 'sanitize_checkbox')));
+
         // Security alert settings.
         register_setting('mbr_custom_login_alerts', 'mbr_custom_login_alerts_enabled', array('sanitize_callback' => array($this, 'sanitize_checkbox')));
         register_setting('mbr_custom_login_alerts', 'mbr_custom_login_alerts_email', array('sanitize_callback' => 'sanitize_email'));
@@ -260,6 +272,34 @@ class MBR_Login_Admin {
      */
     public function sanitize_checkbox($value) {
         return !empty($value) ? 1 : 0;
+    }
+
+    /**
+     * Firewall rate ceiling: at least 1 request.
+     */
+    public function sanitize_firewall_rate_max($value) {
+        return max(1, absint($value));
+    }
+
+    /**
+     * Firewall rate window: at least 5 seconds.
+     */
+    public function sanitize_firewall_rate_window($value) {
+        return max(5, absint($value));
+    }
+
+    /**
+     * Firewall block duration: at least 1 minute.
+     */
+    public function sanitize_firewall_rate_block($value) {
+        return max(1, absint($value));
+    }
+
+    /**
+     * Firewall minimum fill time: 0 (off) to 30 seconds.
+     */
+    public function sanitize_firewall_min_time($value) {
+        return min(30, absint($value));
     }
 
     /**
@@ -542,6 +582,9 @@ class MBR_Login_Admin {
                 </a>
                 <a href="?page=mbr-custom-login&tab=security" class="nav-tab <?php echo $active_tab === 'security' ? 'nav-tab-active' : ''; ?>">
                     <?php esc_html_e('Security', 'mbr-login-customiser'); ?>
+                </a>
+                <a href="?page=mbr-custom-login&tab=firewall" class="nav-tab <?php echo $active_tab === 'firewall' ? 'nav-tab-active' : ''; ?>">
+                    <?php esc_html_e('Firewall', 'mbr-login-customiser'); ?>
                 </a>
                 <a href="?page=mbr-custom-login&tab=logs" class="nav-tab <?php echo $active_tab === 'logs' ? 'nav-tab-active' : ''; ?>">
                     <?php esc_html_e('Logs', 'mbr-login-customiser'); ?>
@@ -1312,6 +1355,15 @@ class MBR_Login_Admin {
                 }
                 ?>
 
+            <?php elseif ($active_tab === 'firewall'): ?>
+
+                <?php
+                $fw = MBR_Custom_Login::get_instance()->firewall();
+                if ($fw) {
+                    $fw->render_settings_tab();
+                }
+                ?>
+
             <?php endif; ?>
         </div>
         <?php
@@ -1321,7 +1373,7 @@ class MBR_Login_Admin {
      * Render the Logs tab: settings form plus the attempt table.
      */
     private function render_logs_tab() {
-        $allowed_events = array('', 'failed', 'success', 'lockout', 'blocked');
+        $allowed_events = array('', 'failed', 'success', 'lockout', 'blocked', 'firewall');
         $event_filter   = isset($_GET['log_event']) ? sanitize_text_field(wp_unslash($_GET['log_event'])) : '';
         if (!in_array($event_filter, $allowed_events, true)) {
             $event_filter = '';
@@ -1375,6 +1427,7 @@ class MBR_Login_Admin {
             'success' => __('Success', 'mbr-login-customiser'),
             'lockout' => __('Lockout', 'mbr-login-customiser'),
             'blocked' => __('Blocked', 'mbr-login-customiser'),
+            'firewall' => __('Firewall', 'mbr-login-customiser'),
         );
         ?>
         <ul class="subsubsub">
@@ -1418,7 +1471,7 @@ class MBR_Login_Admin {
                     <?php foreach ($entries as $row): ?>
                         <?php
                         $local_time = get_date_from_gmt($row->log_time, 'Y-m-d H:i:s');
-                        $colours = array('failed' => '#b32d2e', 'success' => '#1a7f37', 'lockout' => '#996800', 'blocked' => '#8a2be2');
+                        $colours = array('failed' => '#b32d2e', 'success' => '#1a7f37', 'lockout' => '#996800', 'blocked' => '#8a2be2', 'firewall' => '#d63384');
                         $colour  = isset($colours[$row->event]) ? $colours[$row->event] : '#50575e';
                         ?>
                         <tr>

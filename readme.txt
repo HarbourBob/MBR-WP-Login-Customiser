@@ -3,7 +3,7 @@ Contributors: Robert Palmer
 Tags: login, security, customization, branding, custom-login
 Requires at least: 5.0
 Tested up to: 7.00
-Stable tag: 2.0.0
+Stable tag: 2.1.0
 Requires PHP: 8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -14,12 +14,13 @@ Secure and customize your WordPress login page with custom URLs, stunning visual
 
 MBR Login Customiser is a comprehensive security and customization plugin that allows you to completely transform your WordPress login experience. Hide your login page from automated attacks by using a custom URL, then brand it beautifully with modern design options including Dark Mode and Glassmorphism effects.
 
-Version 2.0 adds passwordless passkey sign-in (WebAuthn / FIDO2), real-time security alerts by email or webhook, and trusted-device support to reduce two-factor friction. As with the rest of the plugin, everything is verified on your own server in PHP - no external services, no telemetry, and no third-party calls.
+Version 2.1 adds a Login Firewall that works in front of the login page itself: a request gate, bad-bot filtering, rate limiting, a honeypot, and a minimum form fill time. Version 2.0 added passwordless passkey sign-in (WebAuthn / FIDO2), real-time security alerts by email or webhook, and trusted-device support to reduce two-factor friction. As with the rest of the plugin, everything is verified on your own server in PHP - no external services, no telemetry, and no third-party calls.
 
 Full security audit is bundled into the zip file.
 
 = Security Features =
 
+* **Login Firewall** - Request-level protection in front of the login page: blocked and locked-out IPs get a 403 before the form is served, script/scanner user agents are refused, floods are rate-limited, and an invisible honeypot plus a signed minimum fill time catch bots that submit credentials directly. Pure PHP, no external services
 * **Passkeys (WebAuthn / FIDO2)** - Passwordless, phishing-resistant sign-in using device biometrics, screen lock, or a hardware security key. Verified entirely on your own server in PHP - no external services, no third-party calls
 * **Security Alerts** - Get an email or Slack/Discord webhook notification when an IP is locked out, an administrator signs in from a new IP, or failed logins spike. Per-type cooldowns prevent inbox flooding
 * **Trusted Devices** - Let users tick "trust this device" to skip the second factor on browsers they choose, using a signed, revocable cookie. Only the second step is skipped - the password or passkey is always required
@@ -117,6 +118,16 @@ Yes! Use the Custom CSS field to load and apply any web font you like, or choose
 No. This plugin focuses on login URL customization and appearance. Use it alongside proper security measures like strong passwords, two-factor authentication, and security plugins.
 
 == Changelog ==
+
+= 2.1.0 =
+* New: Login Firewall (Firewall tab). Five layers of request-level protection that run before a single password is checked, all pure PHP with no external services
+* New: Request gate. Blacklisted, locked-out and firewall-blocked IPs receive an HTTP 403 before the login form is even served, instead of only being refused at sign-in
+* New: Bad bot filter. Requests with an empty User-Agent, or one matching a known script or scanner (curl, python-requests, sqlmap, WPScan and similar), are refused. Real browsers always send a User-Agent
+* New: Login page rate limiting. IPs making more than a configurable number of requests to the login page within a time window are temporarily blocked. This counts page hits, not failed passwords, so it stops floods that never submit the form
+* New: Honeypot. An invisible field is added to the login form; humans never see it, and any submission that fills it is refused and the IP blocked immediately
+* New: Minimum fill time. The login form carries an HMAC-signed render timestamp; submissions faster than a human could type, or that never loaded the form at all, are refused. Applies only to the wp-login.php form, so front-end and custom login forms are unaffected
+* New: Optional XML-RPC authentication blocking, closing the classic brute-force side door while leaving pingbacks working. Off by default because Jetpack and the WordPress mobile apps sign in through XML-RPC
+* New: Firewall events appear in the Logs tab with their own filter. Whitelisted IPs bypass every firewall check, and define('MBR_LOGIN_FIREWALL_DISABLE', true) in wp-config.php is an emergency off switch
 
 = 2.0.0 =
 * New: Passkeys (WebAuthn / FIDO2). Users can register a passkey on their profile and sign in with device biometrics, a screen lock, or a hardware security key. The entire ceremony - CBOR decoding, COSE public-key reconstruction, and signature verification - runs on your server in pure PHP using core OpenSSL and Sodium. No Composer libraries, no external services, no third-party calls. Supports ES256, RS256, and EdDSA (Ed25519) credentials
