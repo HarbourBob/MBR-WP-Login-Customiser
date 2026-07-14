@@ -4,11 +4,11 @@
 
 ### Lock down and smarten up the part of your WordPress site attackers hit first — the login page.
 
-Passkeys · Two-Factor · Security Alerts · Trusted Devices · Custom Login URL · Brute-Force Protection
+Login Firewall · Passkeys · Two-Factor · Security Alerts · Trusted Devices · Custom Login URL · Brute-Force Protection
 
 <br>
 
-![Version](https://img.shields.io/badge/version-2.0.0-2b6cb0)
+![Version](https://img.shields.io/badge/version-2.1.0-2b6cb0)
 ![License](https://img.shields.io/badge/license-GPL--2.0%2B-2f855a)
 ![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-21759b)
 ![PHP](https://img.shields.io/badge/PHP-8.0%2B-777bb4)
@@ -21,22 +21,37 @@ Passkeys · Two-Factor · Security Alerts · Trusted Devices · Custom Login URL
 
 ## Why it exists
 
-Nine out of ten attacks on a WordPress site start at the same door: `/wp-login.php`. Bots find it, hammer it, and never get tired. **MBR Login Customiser** moves that door, bolts it, watches it, and — when you're ready — replaces the key with a passkey.
+Nine out of ten attacks on a WordPress site start at the same door: `/wp-login.php`. Bots find it, hammer it, and never get tired. **MBR Login Customiser** moves that door, bolts it, watches it, puts a firewall in front of it, and — when you're ready — replaces the key with a passkey.
 
 It's a full login-security suite that also happens to make your login page look great. And it does the whole job on **your own server**:
 
 - 🆓 **Free forever.** No premium tier, no locked features, no "upgrade to unlock."
 - 🕵️ **No telemetry.** Nothing about your site or your users is phoned home. Ever.
-- 🌐 **No external services, no CDN.** Passkey verification, 2FA QR codes, the lot — all generated and checked in pure PHP, on your box.
+- 🌐 **No external services, no CDN.** Firewall checks, passkey verification, 2FA QR codes, the lot — all generated and checked in pure PHP, on your box.
 - 📖 **GPL and open.** Read every line. Fork it. Ship it.
 
 Built and maintained by one person who thinks good security shouldn't be a paywall.
 
 ---
 
-## ✨ What's new in 2.0
+## ✨ What's new in 2.1
 
-Three headline features, all verified entirely on your own server — no third-party calls.
+### 🧱 Login Firewall
+
+Everything else in the suite decides whether to *let a login succeed*. The firewall acts earlier — on the request itself — so most nasties never reach the form at all. Five layers, each individually switchable:
+
+1. **Request gate** — blacklisted, locked-out and firewall-blocked IPs get an HTTP **403 before the login form is even served**, instead of only being refused at sign-in.
+2. **Bad bot filter** — requests with an empty User-Agent, or one matching a known script or scanner (curl, python-requests, sqlmap, WPScan and friends), are turned away. Real browsers always send a User-Agent.
+3. **Rate limiting** — IPs that hammer the login page are temporarily blocked. This counts *page requests*, not failed passwords, so it stops floods that never even submit the form.
+4. **Honeypot** — an invisible field is added to the login form. Humans never see it; any submission that fills it is refused and the IP blocked on the spot.
+5. **Minimum fill time** — the form carries an HMAC-signed render timestamp. Submissions faster than a human could type — or that never loaded the form at all — are refused. Scoped strictly to `wp-login.php`, so front-end and custom login forms are completely unaffected.
+
+Plus an optional switch to **disable XML-RPC authentication**, closing the classic brute-force side door while leaving pingbacks working (off by default — Jetpack and the WordPress mobile apps sign in through XML-RPC).
+
+Firewall events get their own filter in the Logs tab. Whitelisted IPs bypass every firewall check, and there's a `wp-config` kill switch if you ever need one. As always: **pure PHP, no external services.**
+
+<details>
+<summary><strong>Previously, in 2.0…</strong> (click to expand)</summary>
 
 ### 🔑 Passkeys (WebAuthn / FIDO2)
 Passwordless, phishing-resistant sign-in using a fingerprint, face, screen lock, or a hardware security key. The genuinely hard part — decoding the authenticator's response and verifying its signature — is done in **pure PHP** using the platform's own OpenSSL and libsodium. No Composer libraries, no external validation services, and the private key never leaves the user's device. Supports ES256, RS256 and EdDSA credentials, in either **passwordless** or **second-factor** mode.
@@ -46,6 +61,8 @@ Your login log stops being something you have to remember to check. Get an **ema
 
 ### 📱 Trusted Devices
 Let people tick *"trust this device"* to skip the second factor on browsers they choose — the friction-killer that stops users disabling 2FA altogether. Backed by an **HMAC-signed, server-side revocable cookie** with a hard expiry, so trust is time-limited and can be pulled from a user's profile at any time. Only the second step is skipped — the password or passkey is **always** required.
+
+</details>
 
 ---
 
@@ -66,10 +83,11 @@ Let people tick *"trust this device"* to skip the second factor on browsers they
 <td width="50%" valign="top">
 
 ### 🛡️ Attack protection
+- **Login Firewall** — request gate, bad-bot filter, rate limiting, honeypot & minimum fill time, all before a password is checked
 - **Brute-force protection** — rate limiting with escalating lockouts
 - **Offence memory** — persistent attackers get progressively longer bans
+- **XML-RPC hardening** — optionally close the authentication side door
 - **Login logging** — filterable log with automatic retention
-- **Post-login/logout redirects** — by role or individual user
 - **Multisite ready** — network-wide security policy from Network Admin
 
 </td>
@@ -83,6 +101,7 @@ Let people tick *"trust this device"* to skip the second factor on browsers they
 - **Pure-PHP QR enrolment** — the enrolment QR is drawn on your server
 - **AES-256-GCM** encryption of 2FA secrets at rest
 - **Recovery codes** + admin & `wp-config` recovery paths
+- **Post-login/logout redirects** — by role or individual user
 
 </td>
 <td width="50%" valign="top">
@@ -107,7 +126,7 @@ Let people tick *"trust this device"* to skip the second factor on browsers they
 3. Open the **MBR Login Customiser** settings and work through the tabs — each feature is off until you switch it on.
 4. **Set your custom login URL first and test it in a private window before logging out.** (There's an emergency URL and a kill switch if you ever lock yourself out — see below.)
 
-> 💡 **Tip:** turn features on one at a time. Set your custom URL, confirm you can still get in, then layer on 2FA, passkeys, alerts and trusted devices as you go.
+> 💡 **Tip:** turn features on one at a time. Set your custom URL, confirm you can still get in, then layer on the firewall, 2FA, passkeys, alerts and trusted devices as you go. Add your own IP to the whitelist before enabling the firewall and it can never get in your way.
 
 ---
 
@@ -117,9 +136,9 @@ Let people tick *"trust this device"* to skip the second factor on browsers they
 |-----|--------------|
 | **Login URL** | Your custom slug, standard-login blocking, emergency access key |
 | **Appearance** | Logo, colours, dark mode, glassmorphism, fonts, custom CSS |
-| **Security** | Rate limiting, escalating lockouts, IP blacklist |
-| **Access** | IP allow/block (CIDR) and time-based access windows |
-| **Logs** | Login event history with retention control |
+| **Security** | Rate limiting, escalating lockouts, IP allow/block lists (CIDR) |
+| **Firewall** | Request gate, bad-bot filter, page rate limiting, honeypot, minimum fill time, XML-RPC |
+| **Logs** | Login event history with retention control — now including firewall events |
 | **Redirects** | Where users land after login / logout, by role or user |
 | **Schedule** | Permitted login hours in your site's timezone |
 | **Two-Factor** | TOTP enrolment, recovery codes, app-password policy |
@@ -142,23 +161,24 @@ https://yoursite.com/?mbr_emergency=YOUR_EMERGENCY_KEY
 
 **Kill switches** — if you have FTP/SSH, add one of these to `wp-config.php`, log in normally, then remove it:
 ```php
-define('MBR_EMERGENCY_DISABLE', true);       // disables login-URL protection
-define('MBR_LOGIN_PASSKEYS_DISABLE', true);  // disables passkeys site-wide
+define('MBR_EMERGENCY_DISABLE', true);        // disables login-URL protection
+define('MBR_LOGIN_PASSKEYS_DISABLE', true);   // disables passkeys site-wide
+define('MBR_LOGIN_FIREWALL_DISABLE', true);   // disables the login firewall
 ```
 
-Recovery codes and administrator overrides are also available for two-factor and passkeys, so a lost phone never means a locked account.
+Recovery codes and administrator overrides are also available for two-factor and passkeys, so a lost phone never means a locked account. And IPs on your whitelist bypass every firewall check, so put your own IP there first.
 
 ---
 
 ## 🔒 Security philosophy
 
-- **Everything happens on your server.** No request about your site or your users is ever sent to a third party. Passkey ceremonies, TOTP verification and QR generation are all local, in pure PHP.
+- **Everything happens on your server.** No request about your site or your users is ever sent to a third party. Firewall checks, passkey ceremonies, TOTP verification and QR generation are all local, in pure PHP.
 - **Additive by default.** Passwordless passkey sign-in sits *alongside* the normal login — it can never lock a legitimate user out.
 - **Least surprise.** Every feature ships off, and every risky action has a documented recovery path.
 - **Independently audited surface.** A security-audit report covering the codebase is bundled with the plugin.
 
 ### What it does **not** claim to be
-- It isn't an edge firewall or a CDN — pair it with your host's WAF or Cloudflare for network-level filtering.
+- The Login Firewall protects the *login surface* at the application level. It isn't a site-wide edge firewall or a CDN — pair it with your host's WAF or Cloudflare for network-level filtering across the whole site.
 - It doesn't replace good hygiene — strong passwords and keeping WordPress updated still matter.
 
 ---
@@ -183,9 +203,10 @@ Updates are **self-hosted** and delivered straight to your dashboard via the [Pl
 
 ## 🗺️ Roadmap
 
-Much of the original roadmap is now shipped ✅ — multisite, logging, IP lists, time-based access, 2FA, redirects and brute-force protection all landed. On the horizon:
+Much of the original roadmap is now shipped ✅ — multisite, logging, IP lists, time-based access, 2FA, redirects, brute-force protection and, as of 2.1, the **Login Firewall**. On the horizon:
 
-- [ ] **Login firewall / request hardening** — a focused, monitor-mode-first ruleset for the login, XML-RPC and REST auth surfaces (reusing the existing IP, rate-limit and logging engine)
+- [ ] **Firewall monitor mode** — log what *would* be blocked without blocking it, for cautious rollouts
+- [ ] **REST API auth hardening** — extending the firewall's coverage to REST authentication endpoints
 - [ ] More authenticator/attestation options for passkeys
 - [ ] Additional alert channels
 
@@ -195,6 +216,11 @@ Got a feature request? [Open an issue](../../issues) — this plugin is shaped b
 
 <details>
 <summary>📜 <strong>Version history</strong> (click to expand)</summary>
+
+### 2.1.0
+- **New:** Login Firewall — five layers of request-level protection that run before a single password is checked: a request gate (403 for blocked and locked-out IPs before the form is served), a bad-bot User-Agent filter, login-page rate limiting, an invisible honeypot, and an HMAC-signed minimum form fill time. All pure PHP with no external services.
+- **New:** Optional XML-RPC authentication blocking (off by default; Jetpack and the mobile apps use XML-RPC).
+- **New:** Firewall events in the Logs tab with their own filter, whitelist bypass throughout, and a `MBR_LOGIN_FIREWALL_DISABLE` kill switch.
 
 ### 2.0.0
 - **New:** Passkeys (WebAuthn / FIDO2) — passwordless, phishing-resistant sign-in, verified in pure PHP (CBOR decode, COSE key reconstruction, signature checks) with no external services. Passwordless and second-factor modes; ES256, RS256 and EdDSA support.
@@ -247,7 +273,7 @@ body.login { background: #1a1a1a; }
 </details>
 
 <details>
-<summary>🧩 <strong>Playing nicely with caching</strong> (click to expand)</summary>
+<summary>🧩 <strong>Playing nicely with caching & monitoring</strong> (click to expand)</summary>
 
 If a caching plugin interferes with your custom login URL, exclude it from caching:
 
@@ -256,6 +282,8 @@ If a caching plugin interferes with your custom login URL, exclude it from cachi
 - **WP Super Cache** → *Rejected URLs*
 
 On SiteGround, also exclude it from SG Optimizer's dynamic cache if needed.
+
+**Uptime monitors:** if your monitoring service checks the login page with a script (curl or similar), either add its IP to the whitelist or switch off the firewall's bad-bot filter — otherwise it will be refused, exactly as designed.
 
 </details>
 
